@@ -8,30 +8,34 @@ Files:
     zfft1d.f    : 1-dimensional complex FFT routine
     zfft2d.f    : 2-dimensional complex FFT routine
     zfft3d.f    : 3-dimensional complex FFT routine
-    kernel.f    : FFT kernel routine (radix-2,3,4,5 and 8)
+    kernel1.f   : FFT kernel routine (radix-2,3,4,5 and 8)
+    kernel2.f   : FFT kernel routine (radix-2,3,4,5 and 8)
+    sse2.c      : FFT kernel routine (radix-2,3,4,5 and 8)
     param.h     : Header file for parameters
     readme.txt  : Readme file
     tests/      : Test Directory
-        Makefile    : Makefile for test programs.
-        test1d.f    : Test program for zfft1d
-        test2d.f    : Test program for zfft2d
-        test3d.f    : Test program for zfft3d
-        speed1d.f   : Speed test program for zfft1d
-        speed2d.f   : Speed test program for zfft2d
-        speed3d.f   : Speed test program for zfft3d
+        Makefile       : Makefile for test programs.
+        Makefile.sse2  : Makefile for test programs.
+        test1d.f       : Test program for zfft1d
+        test2d.f       : Test program for zfft2d
+        test3d.f       : Test program for zfft3d
+        speed1d.f      : Speed test program for zfft1d
+        speed2d.f      : Speed test program for zfft2d
+        speed3d.f      : Speed test program for zfft3d
     mpi/        : MPI version Directory
-        pzfft1d.f   : 1-dimensional complex FFT routine (MPI version)
-        pzfft2d.f   : 2-dimensional complex FFT routine (MPI version)
-        pzfft3d.f   : 3-dimensional complex FFT routine (MPI version)
-        pztrans.f   : Global transpose routine (MPI version)
-        tests/      : Test Directory
-            Makefile    : Makefile for test programs.
-            ptest1d.f   : Test program for pzfft1d (MPI version)
-            ptest2d.f   : Test program for pzfft2d (MPI version)
-            ptest3d.f   : Test program for pzfft3d (MPI version)
-            pspeed1d.f  : Speed test program for pzfft1d (MPI version)
-            pspeed2d.f  : Speed test program for pzfft2d (MPI version)
-            pspeed3d.f  : Speed test program for pzfft3d (MPI version)
+        pzfft1d.f  : 1-dimensional complex FFT routine (MPI version)
+        pzfft2d.f  : 2-dimensional complex FFT routine (MPI version)
+        pzfft3d.f  : 3-dimensional complex FFT routine (MPI version)
+        pztrans.f  : Global transpose routine (MPI version)
+        tests/     : Test Directory
+            Makefile       : Makefile for test programs.
+            Makefile.sse2  : Makefile for test programs.
+            ptest1d.f      : Test program for pzfft1d (MPI version)
+            ptest2d.f      : Test program for pzfft2d (MPI version)
+            ptest3d.f      : Test program for pzfft3d (MPI version)
+            pspeed1d.f     : Speed test program for pzfft1d (MPI version)
+            pspeed2d.f     : Speed test program for pzfft2d (MPI version)
+            pspeed3d.f     : Speed test program for pzfft3d (MPI version)
 
 Reference:
     1. Daisuke Takahashi: A Blocking Algorithm for FFT on Cache-Based
@@ -52,7 +56,7 @@ Reference:
 
 Copyright:
     Copyright(C) 2000-2003 Daisuke Takahashi
-    Institute of Information Sciences and Electronics,
+    Institute of Information Sciences and Electronics
     University of Tsukuba
     1-1-1 Tennodai, Tsukuba, Ibaraki 305-8573, Japan
     e-mail: daisuke@is.tsukuba.ac.jp
