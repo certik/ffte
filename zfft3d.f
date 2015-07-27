@@ -91,7 +91,7 @@ C
    20       CONTINUE
    30     CONTINUE
           DO 40 I=II,MIN0(II+NBLK-1,NX)
-            CALL FFT23458(BZ(1,I-II+1),C,WZ,NZ,LNZ)
+            CALL FFT235A(BZ(1,I-II+1),C,WZ,NZ,LNZ)
    40     CONTINUE
           DO 60 K=1,NZ
             DO 50 I=II,MIN0(II+NBLK-1,NX)
@@ -111,7 +111,7 @@ C
   100       CONTINUE
   110     CONTINUE
           DO 120 I=II,MIN0(II+NBLK-1,NX)
-            CALL FFT23458(BY(1,I-II+1),C,WY,NY,LNY)
+            CALL FFT235A(BY(1,I-II+1),C,WY,NY,LNY)
   120     CONTINUE
           DO 140 J=1,NY
             DO 130 I=II,MIN0(II+NBLK-1,NX)
@@ -120,7 +120,7 @@ C
   140     CONTINUE
   150   CONTINUE
         DO 160 J=1,NY
-          CALL FFT23458(A(1,J,K),C,WX,NX,LNX)
+          CALL FFT235A(A(1,J,K),C,WX,NX,LNX)
   160   CONTINUE
   170 CONTINUE
       RETURN

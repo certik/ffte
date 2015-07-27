@@ -83,7 +83,7 @@ C
    20     CONTINUE
    30   CONTINUE
         DO 40 I=II,MIN0(II+NBLK-1,NX)
-          CALL FFT23458(B(1,I-II+1),C,WY,NY,LNY)
+          CALL FFT235A(B(1,I-II+1),C,WY,NY,LNY)
    40   CONTINUE
         DO 60 J=1,NY
           DO 50 I=II,MIN0(II+NBLK-1,NX)
@@ -93,7 +93,7 @@ C
    70 CONTINUE
 !$OMP DO
       DO 80 J=1,NY
-        CALL FFT23458(A(1,J),B,WX,NX,LNX)
+        CALL FFT235A(A(1,J),B,WX,NX,LNX)
    80 CONTINUE
       RETURN
       END

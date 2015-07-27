@@ -16,7 +16,7 @@ C     FORTRAN77 SOURCE PROGRAM
 C
 C     WRITTEN BY DAISUKE TAKAHASHI
 C
-      SUBROUTINE FFT23458(A,B,W,N,IP)
+      SUBROUTINE FFT235A(A,B,W,N,IP)
       IMPLICIT REAL*8 (A-H,O-Z)
       COMPLEX*16 A(*),B(*),W(*)
       DIMENSION IP(*)
@@ -114,6 +114,108 @@ C
           CALL FFT2(A,A,M)
         ELSE
           CALL FFT2(B,A,M)
+        END IF
+      END IF
+      RETURN
+      END
+      SUBROUTINE FFT235B(A,B,W,N,IP)
+      IMPLICIT REAL*8 (A-H,O-Z)
+      COMPLEX*16 A(*),B(*),W(*)
+      DIMENSION IP(*)
+C
+      IF (IP(1) .NE. 1) THEN
+        KP4=2-MOD(IP(1)+2,3)
+        KP8=(IP(1)-KP4)/3
+      ELSE
+        KP4=0
+        KP8=0
+      END IF
+C
+      KEY=1
+      J=1
+      L=N
+      M=1
+      DO 10 K=1,KP8
+        L=L/8
+        IF (L .GE. 2) THEN
+          IF (KEY .GE. 0) THEN
+            CALL FFT8(A,B,W(J),M,L)
+          ELSE
+            CALL FFT8(B,A,W(J),M,L)
+          END IF
+          KEY=-KEY
+        ELSE
+          IF (KEY .GE. 0) THEN
+            CALL FFT8(A,B,W(J),M,L)
+          ELSE
+            CALL FFT8(B,B,W(J),M,L)
+          END IF
+        END IF
+        M=M*8
+        J=J+L
+   10 CONTINUE
+      DO 20 K=1,IP(3)
+        L=L/5
+        IF (L .GE. 2) THEN
+          IF (KEY .GE. 0) THEN
+            CALL FFT5(A,B,W(J),M,L)
+          ELSE
+            CALL FFT5(B,A,W(J),M,L)
+          END IF
+          KEY=-KEY
+        ELSE
+          IF (KEY .GE. 0) THEN
+            CALL FFT5(A,B,W(J),M,L)
+          ELSE
+            CALL FFT5(B,B,W(J),M,L)
+          END IF
+        END IF
+        M=M*5
+        J=J+L
+   20 CONTINUE
+      DO 30 K=1,KP4
+        L=L/4
+        IF (L .GE. 2) THEN
+          IF (KEY .GE. 0) THEN
+            CALL FFT4(A,B,W(J),M,L)
+          ELSE
+            CALL FFT4(B,A,W(J),M,L)
+          END IF
+          KEY=-KEY
+        ELSE
+          IF (KEY .GE. 0) THEN
+            CALL FFT4(A,B,W(J),M,L)
+          ELSE
+            CALL FFT4(B,B,W(J),M,L)
+          END IF
+        END IF
+        M=M*4
+        J=J+L
+   30 CONTINUE
+      DO 40 K=1,IP(2)
+        L=L/3
+        IF (L .GE. 2) THEN
+          IF (KEY .GE. 0) THEN
+            CALL FFT3(A,B,W(J),M,L)
+          ELSE
+            CALL FFT3(B,A,W(J),M,L)
+          END IF
+          KEY=-KEY
+        ELSE
+          IF (KEY .GE. 0) THEN
+            CALL FFT3(A,B,W(J),M,L)
+          ELSE
+            CALL FFT3(B,B,W(J),M,L)
+          END IF
+        END IF
+        M=M*3
+        J=J+L
+   40 CONTINUE
+      IF (IP(1) .EQ. 1) THEN
+        IF (KEY .GE. 0) THEN
+          CALL FFT2(A,B,M)
+        ELSE
+          CALL FFT2(B,B,M)
         END IF
       END IF
       RETURN

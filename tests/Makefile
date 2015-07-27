@@ -1,7 +1,7 @@
 F77 = g77
 FFLAGS = -O3 -fomit-frame-pointer -malign-double -I..
 LDFLAGS =
-#F77 = ifc
+#F77 = ifort
 #FFLAGS = -O3 -xW -fno-alias -I..
 #LDFLAGS = -Vaxlib
 

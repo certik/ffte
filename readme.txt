@@ -11,11 +11,13 @@ Files:
     kernel1.f   : FFT kernel routine (radix-2,3,4,5 and 8)
     kernel2.f   : FFT kernel routine (radix-2,3,4,5 and 8)
     sse2.c      : FFT kernel routine (radix-2,3,4,5 and 8)
+    sse3.c      : FFT kernel routine (radix-2,3,4,5 and 8)
     param.h     : Header file for parameters
     readme.txt  : Readme file
     tests/      : Test Directory
         Makefile       : Makefile for test programs.
         Makefile.sse2  : Makefile for test programs.
+        Makefile.sse3  : Makefile for test programs.
         test1d.f       : Test program for zfft1d
         test2d.f       : Test program for zfft2d
         test3d.f       : Test program for zfft3d
@@ -30,6 +32,7 @@ Files:
         tests/     : Test Directory
             Makefile       : Makefile for test programs.
             Makefile.sse2  : Makefile for test programs.
+            Makefile.sse3  : Makefile for test programs.
             ptest1d.f      : Test program for pzfft1d (MPI version)
             ptest2d.f      : Test program for pzfft2d (MPI version)
             ptest3d.f      : Test program for pzfft3d (MPI version)

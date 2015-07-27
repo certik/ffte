@@ -51,27 +51,23 @@ C
             A(I)=DCONJG(A(I))
    10     CONTINUE
         END IF
-        CALL FFT23458(A,B,W1,N,IP)
-        IF (IOPT .EQ. 1) THEN
-          DO 20 I=1,N
-            B(I)=A(I)
-   20     CONTINUE
-        ELSE
+        CALL FFT235B(A,B,W1,N,IP)
+        IF (IOPT .EQ. 2) THEN
           DN=1.0D0/DBLE(N)
-          DO 30 I=1,N
-            B(I)=DCONJG(A(I))*DN
-   30     CONTINUE
+          DO 20 I=1,N
+            B(I)=DCONJG(B(I))*DN
+   20     CONTINUE
         END IF
       ELSE
         IF (IOPT .EQ. 2) THEN
-          DO 40 I=1,N
+          DO 30 I=1,N
             A(I)=DCONJG(A(I))
-   40     CONTINUE
+   30     CONTINUE
         END IF
-        DO 50 I=1,3
+        DO 40 I=1,3
           IP1(I)=(IP(I)+1)/2
           IP2(I)=IP(I)-IP1(I)
-   50   CONTINUE
+   40   CONTINUE
         N1=(2**IP1(1))*(3**IP1(2))*(5**IP1(3))
         N2=(2**IP2(1))*(3**IP2(2))*(5**IP2(3))
         IF (2**IP1(1) .LT. NBLK .OR. 2**IP2(1) .LT. NBLK) THEN
@@ -93,9 +89,9 @@ C
 !$OMP END PARALLEL
         IF (IOPT .EQ. 2) THEN
           DN=1.0D0/DBLE(N)
-          DO 60 I=1,N
+          DO 50 I=1,N
             B(I)=DCONJG(B(I))*DN
-   60     CONTINUE
+   50     CONTINUE
         END IF
       END IF
       RETURN
@@ -121,7 +117,7 @@ C
    20     CONTINUE
    30   CONTINUE
         DO 40 I=II,MIN0(II+NBLK-1,N1)
-          CALL FFT23458(C(1,I-II+1),D,W2,N2,IP2)
+          CALL FFT235A(C(1,I-II+1),D,W2,N2,IP2)
    40   CONTINUE
         IF (2**IP1(1) .LT. NBLK .OR. 2**IP2(1) .LT. NBLK) THEN
           DO 70 IS=1,N2/M2
@@ -154,7 +150,7 @@ C
 !$OMP DO
       DO 150 JJ=1,N2,NBLK
         DO 120 J=JJ,MIN0(JJ+NBLK-1,N2)
-          CALL FFT23458(A(1,J),C,W1,N1,IP1)
+          CALL FFT235A(A(1,J),C,W1,N1,IP1)
   120   CONTINUE
         DO 140 I=1,N1
           DO 130 J=JJ,MIN0(JJ+NBLK-1,N2)

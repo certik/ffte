@@ -17,7 +17,7 @@
       WRITTEN BY DAISUKE TAKAHASHI
 */
 
-#include <emmintrin.h>
+#include <pmmintrin.h>
 
 __m128d ZMUL(__m128d a, __m128d b);
 
@@ -25,14 +25,13 @@ static __inline __m128d ZMUL(__m128d a, __m128d b)
 {
     __m128d ar, ai;
 
-    ar = _mm_unpacklo_pd(a, a);            /* ar = [a.r a.r] */
-    ar = _mm_mul_pd(ar, b);                /* ar = [a.r*b.r a.r*b.i] */
-    ai = _mm_unpackhi_pd(a, a);            /* ai = [a.i a.i] */
-    ai = _mm_xor_pd(ai, _mm_set_sd(-0.0)); /* ai = [-a.i a.i] */
-    b = _mm_shuffle_pd(b, b, 1);           /* b = [b.i b.r] */
-    ai = _mm_mul_pd(ai, b);                /* ai = [-a.i*b.i a.i*b.r] */
+    ar = _mm_movedup_pd(a);       /* ar = [a.r a.r] */
+    ar = _mm_mul_pd(ar, b);       /* ar = [a.r*b.r a.r*b.i] */
+    ai = _mm_unpackhi_pd(a, a);   /* ai = [a.i a.i] */
+    b = _mm_shuffle_pd(b, b, 1);  /* b = [b.i b.r] */
+    ai = _mm_mul_pd(ai, b);       /* ai = [a.i*b.i a.i*b.r] */
 
-    return _mm_add_pd(ar, ai);             /* [a.r*b.r-a.i*b.i a.r*b.i+a.i*b.r] */
+    return _mm_addsub_pd(ar, ai); /* [a.r*b.r-a.i*b.i a.r*b.i+a.i*b.r] */
 }
 
 int fft2_(double *a, double *b, int *m)
