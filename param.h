@@ -1,7 +1,7 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2011, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2014, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
 C         FACULTY OF ENGINEERING, INFORMATION AND SYSTEMS
@@ -24,6 +24,8 @@ C The maximum supported 3-D transform length is 4096.
       PARAMETER (NDA3=4096)
 C The parameter NBLK is a blocking parameter.
       PARAMETER (NBLK=16)
+C The parameter NB is a blocking parameter for NVIDIA GPUs.
+      parameter (NB=128)
 C The parameter NP is a padding parameter to avoid cache conflicts in
 C the FFT routines.
       PARAMETER (NP=8)

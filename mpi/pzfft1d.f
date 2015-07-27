@@ -1,7 +1,7 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2011, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2014, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
 C         FACULTY OF ENGINEERING, INFORMATION AND SYSTEMS
@@ -219,40 +219,5 @@ C
           W(J,I)=DCMPLX(DCOS(TEMP),DSIN(TEMP))
    10   CONTINUE
    20 CONTINUE
-      RETURN
-      END
-      SUBROUTINE PGETNXNY(N,NX,NY,NPU)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION IP(3),LNPU(3),LNX(3),LNY(3)
-      INTEGER*8 N
-C
-      ISQRTN=IDINT(DSQRT(DBLE(N)))
-      CALL FACTOR(NPU,LNPU)
-      CALL FACTOR8(N,IP)
-      DO 10 I=1,3
-        LNX(I)=0
-   10 CONTINUE
-      IRES=ISQRTN
-      DO 40 K=LNPU(3),(IP(3)+1)/2
-        DO 30 J=LNPU(2),(IP(2)+1)/2
-          DO 20 I=LNPU(1),(IP(1)+1)/2
-            NX=(2**I)*(3**J)*(5**K)
-            IF (NX .LE. ISQRTN) THEN
-              IRES2=ISQRTN-NX
-              IF (IRES2 .LT. IRES) THEN
-                LNX(1)=I
-                LNX(2)=J
-                LNX(3)=K
-                IRES=IRES2
-              END IF
-            END IF
-   20     CONTINUE
-   30   CONTINUE
-   40 CONTINUE
-      DO 50 I=1,3
-        LNY(I)=IP(I)-LNX(I)
-   50 CONTINUE
-      NX=(2**LNX(1))*(3**LNX(2))*(5**LNX(3))
-      NY=(2**LNY(1))*(3**LNY(2))*(5**LNY(3))
       RETURN
       END

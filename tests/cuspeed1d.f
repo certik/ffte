@@ -10,18 +10,19 @@ C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
 C
 C
-C     ZFFT1D SPEED TEST PROGRAM
+C     ZFFT1D SPEED TEST PROGRAM (FOR NVIDIA GPUS)
 C
-C     FORTRAN77 SOURCE PROGRAM
+C     CUDA FORTRAN SOURCE PROGRAM
 C
 C     WRITTEN BY DAISUKE TAKAHASHI
 C
+      use cudafor
       IMPLICIT REAL*8 (A-H,O-Z)
-      PARAMETER (NDA=16777216)
-      COMPLEX*16 A(NDA),B(NDA*2)
+      PARAMETER (NDA=33554432)
+      complex(8),pinned,allocatable :: A(:),B(:)
       DIMENSION IP(3)
-      SAVE A,B
 C
+      ALLOCATE(A(NDA),B(NDA*2))
       WRITE(6,*) ' N ='
       READ(5,*) N
       CALL FACTOR(N,IP)
@@ -44,18 +45,19 @@ C
 !$    END IF
 !$    TIME0=TIME0/DBLE(LOOP)
 !$    FLOPS=(2.5D0*DBLE(IP(1))+4.66666666666666D0*DBLE(IP(2))
-!$   1       +6.8D0*DBLE(IP(3)))*2.0D0*DBLE(N)/TIME0/1.0D6
+!$   1       +6.8D0*DBLE(IP(3)))*2.0D0*DBLE(N)/TIME0/1.0D9
 !$    WRITE(6,*) ' N =',N
 !$    WRITE(6,*) ' TIME =',TIME0
-!$    WRITE(6,*) FLOPS,' MFLOPS'
+!$    WRITE(6,*) FLOPS,' GFLOPS'
 C
+      CALL ZFFT1D(A,N,3,B)
+      DEALLOCATE(A,B)
       STOP
       END
       SUBROUTINE INIT(A,N)
       IMPLICIT REAL*8 (A-H,O-Z)
       COMPLEX*16 A(*)
 C
-!$OMP PARALLEL DO
 !DIR$ VECTOR ALIGNED
       DO 10 I=1,N
 C        A(I)=DCMPLX(DBLE(I),DBLE(N-I+1))

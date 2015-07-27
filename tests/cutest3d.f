@@ -10,28 +10,32 @@ C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
 C
 C
-C     ZFFT2D TEST PROGRAM
+C     ZFFT3D TEST PROGRAM (FOR NVIDIA GPUS)
 C
-C     FORTRAN77 SOURCE PROGRAM
+C     CUDA FORTRAN SOURCE PROGRAM
 C
 C     WRITTEN BY DAISUKE TAKAHASHI
 C
+      use cudafor
       IMPLICIT REAL*8 (A-H,O-Z)
-      PARAMETER (NDA=16777216)
-      COMPLEX*16 A(NDA)
-      SAVE A
+      PARAMETER (NDA=33554432)
+      complex(8),pinned,allocatable :: A(:)
 C
-      WRITE(6,*) ' NX,NY ='
-      READ(5,*) NX,NY
+      ALLOCATE(A(NDA))
+      WRITE(6,*) ' NX,NY,NZ ='
+      READ(5,*) NX,NY,NZ
 C
-      CALL INIT(A,NX*NY)
-      CALL ZFFT2D(A,NX,NY,0)
+      CALL INIT(A,NX*NY*NZ)
+      CALL ZFFT3D(A,NX,NY,NZ,0)
 C
-      CALL ZFFT2D(A,NX,NY,-1)
-      CALL DUMP(A,NX*NY)
+      CALL ZFFT3D(A,NX,NY,NZ,-1)
+      CALL DUMP(A,NX*NY*NZ)
 C
-      CALL ZFFT2D(A,NX,NY,1)
-      CALL DUMP(A,NX*NY)
+      CALL ZFFT3D(A,NX,NY,NZ,1)
+      CALL DUMP(A,NX*NY*NZ)
+C
+      CALL ZFFT3D(A,NX,NY,NZ,3)
+      DEALLOCATE(A)
 C
       STOP
       END
@@ -39,7 +43,6 @@ C
       IMPLICIT REAL*8 (A-H,O-Z)
       COMPLEX*16 A(*)
 C
-!$OMP PARALLEL DO
 !DIR$ VECTOR ALIGNED
       DO 10 I=1,N
         A(I)=DCMPLX(DBLE(I),DBLE(N-I+1))

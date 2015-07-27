@@ -10,31 +10,34 @@ C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
 C
 C
-C     ZFFT1D SPEED TEST PROGRAM
+C     ZFFT3D SPEED TEST PROGRAM (FOR NVIDIA GPUS)
 C
-C     FORTRAN77 SOURCE PROGRAM
+C     CUDA FORTRAN SOURCE PROGRAM
 C
 C     WRITTEN BY DAISUKE TAKAHASHI
 C
+      use cudafor
       IMPLICIT REAL*8 (A-H,O-Z)
-      PARAMETER (NDA=16777216)
-      COMPLEX*16 A(NDA),B(NDA*2)
-      DIMENSION IP(3)
-      SAVE A,B
+      PARAMETER (NDA=33554432)
+      complex(8),pinned,allocatable :: A(:)
+      DIMENSION LNX(3),LNY(3),LNZ(3)
 C
-      WRITE(6,*) ' N ='
-      READ(5,*) N
-      CALL FACTOR(N,IP)
+      ALLOCATE(A(NDA))
+      WRITE(6,*) ' NX,NY,NZ ='
+      READ(5,*) NX,NY,NZ
+      CALL FACTOR(NX,LNX)
+      CALL FACTOR(NY,LNY)
+      CALL FACTOR(NZ,LNZ)
 C
-      CALL INIT(A,N)
-      CALL ZFFT1D(A,N,0,B)
-      CALL ZFFT1D(A,N,-1,B)
+      CALL INIT(A,NX*NY*NZ)
+      CALL ZFFT3D(A,NX,NY,NZ,0)
+      CALL ZFFT3D(A,NX,NY,NZ,-1)
       LOOP=1
 C
 !$ 10 CONTINUE
 !$    TIME1=OMP_GET_WTIME()
       DO 20 I=1,LOOP
-        CALL ZFFT1D(A,N,-1,B)
+        CALL ZFFT3D(A,NX,NY,NZ,-1)
    20 CONTINUE
 !$    TIME2=OMP_GET_WTIME()
 !$    TIME0=TIME2-TIME1
@@ -43,19 +46,22 @@ C
 !$      GO TO 10
 !$    END IF
 !$    TIME0=TIME0/DBLE(LOOP)
-!$    FLOPS=(2.5D0*DBLE(IP(1))+4.66666666666666D0*DBLE(IP(2))
-!$   1       +6.8D0*DBLE(IP(3)))*2.0D0*DBLE(N)/TIME0/1.0D6
-!$    WRITE(6,*) ' N =',N
+!$    FLOPS=(2.5D0*DBLE(LNX(1)+LNY(1)+LNZ(1))
+!$   1       +4.66666666666666D0*DBLE(LNX(2)+LNY(2)+LNZ(2))
+!$   2       +6.8D0*DBLE(LNX(3)+LNY(3)+LNZ(3)))*2.0D0
+!$   3       *DBLE(NX)*DBLE(NY)*DBLE(NZ)/TIME0/1.0D9
+!$    WRITE(6,*) ' NX =',NX,' NY =',NY,' NZ =',NZ
 !$    WRITE(6,*) ' TIME =',TIME0
-!$    WRITE(6,*) FLOPS,' MFLOPS'
+!$    WRITE(6,*) FLOPS,' GFLOPS'
 C
+      CALL ZFFT3D(A,NX,NY,NZ,3)
+      DEALLOCATE(A)
       STOP
       END
       SUBROUTINE INIT(A,N)
       IMPLICIT REAL*8 (A-H,O-Z)
       COMPLEX*16 A(*)
 C
-!$OMP PARALLEL DO
 !DIR$ VECTOR ALIGNED
       DO 10 I=1,N
 C        A(I)=DCMPLX(DBLE(I),DBLE(N-I+1))
