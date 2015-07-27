@@ -1,10 +1,10 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2011, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
-C         GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
+C         FACULTY OF ENGINEERING, INFORMATION AND SYSTEMS
 C         UNIVERSITY OF TSUKUBA
 C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
@@ -220,89 +220,98 @@ C
       END IF
       RETURN
       END
-      SUBROUTINE ZTRANS(A,B,N1,N2)
+      SUBROUTINE ZTRANS(A,B,NX,NY)
       IMPLICIT REAL*8 (A-H,O-Z)
       COMPLEX*16 A(*),B(*)
-      DIMENSION IP1(3),IP2(3)
+      DIMENSION LNX(3),LNY(3)
 C
-      CALL FACTOR(N1,IP1)
-      CALL FACTOR(N2,IP2)
+      CALL FACTOR(NX,LNX)
+      CALL FACTOR(NY,LNY)
 C
-      IF (N1 .EQ. 1 .OR. N2 .EQ. 1) THEN
-        DO 10 I=1,N1*N2
+      IF (NX .EQ. 1 .OR. NY .EQ. 1) THEN
+!DIR$ VECTOR ALIGNED
+        DO 10 I=1,NX*NY
           B(I)=A(I)
    10   CONTINUE
         RETURN
       END IF
 C
-      IF (IP1(1)+IP2(1) .LE. 1) THEN
-        CALL ZTRANSA(A,B,N1,N2)
+      IF (LNX(1)+LNY(1) .LE. 1) THEN
+        CALL ZTRANSA(A,B,NX,NY)
       ELSE
-        CALL ZTRANSB(A,B,N1,N2)
+        CALL ZTRANSB(A,B,NX,NY)
       END IF
       RETURN
       END
-      SUBROUTINE ZTRANSA(A,B,N1,N2)
+      SUBROUTINE ZTRANSA(A,B,NX,NY)
       IMPLICIT REAL*8 (A-H,O-Z)
-      COMPLEX*16 A(N1,*),B(N2,*)
+      COMPLEX*16 A(NX,*),B(NY,*)
 C
-      DO 20 I=1,N1
-        DO 10 J=1,N2
+      DO 20 I=1,NX
+!DIR$ VECTOR ALIGNED
+        DO 10 J=1,NY
           B(J,I)=A(I,J)
    10   CONTINUE
    20 CONTINUE
       RETURN
       END
-      SUBROUTINE ZTRANSB(A,B,N1,N2)
+      SUBROUTINE ZTRANSB(A,B,NX,NY)
       IMPLICIT REAL*8 (A-H,O-Z)
-      COMPLEX*16 A(N1,*),B(N2,*)
+      COMPLEX*16 A(NX,*),B(NY,*)
 C
-      IF (N2 .GE. N1) THEN
-        DO 20 I=0,N1-1
-          DO 10 J=1,N1-I
+      IF (NY .GE. NX) THEN
+        DO 20 I=0,NX-1
+!DIR$ VECTOR ALIGNED
+          DO 10 J=1,NX-I
             B(J,I+J)=A(I+J,J)
    10     CONTINUE
    20   CONTINUE
-        DO 40 I=1,N2-N1
-          DO 30 J=1,N1
+        DO 40 I=1,NY-NX
+!DIR$ VECTOR ALIGNED
+          DO 30 J=1,NX
             B(I+J,J)=A(J,I+J)
    30     CONTINUE
    40   CONTINUE
-        DO 60 I=N2-N1+1,N2-1
-          DO 50 J=1,N2-I
+        DO 60 I=NY-NX+1,NY-1
+!DIR$ VECTOR ALIGNED
+          DO 50 J=1,NY-I
             B(I+J,J)=A(J,I+J)
    50     CONTINUE
    60   CONTINUE
       ELSE
-        DO 80 I=0,N2-1
-          DO 70 J=1,N2-I
+        DO 80 I=0,NY-1
+!DIR$ VECTOR ALIGNED
+          DO 70 J=1,NY-I
             B(I+J,J)=A(J,I+J)
    70     CONTINUE
    80   CONTINUE
-        DO 100 I=1,N1-N2
-          DO 90 J=1,N2
+        DO 100 I=1,NX-NY
+!DIR$ VECTOR ALIGNED
+          DO 90 J=1,NY
             B(J,I+J)=A(I+J,J)
    90     CONTINUE
   100   CONTINUE
-        DO 120 I=N1-N2+1,N1-1
-          DO 110 J=1,N1-I
+        DO 120 I=NX-NY+1,NX-1
+!DIR$ VECTOR ALIGNED
+          DO 110 J=1,NX-I
             B(J,I+J)=A(I+J,J)
   110     CONTINUE
   120   CONTINUE
       END IF
       RETURN
       END
-      SUBROUTINE MZTRANSA(A,B,NS,NY,NZ)
+      SUBROUTINE MZTRANSA(A,B,NS,NX,NY)
       IMPLICIT REAL*8 (A-H,O-Z)
-      COMPLEX*16 A(NS,NY,*),B(NS,NZ,*)
+      COMPLEX*16 A(NS,NX,*),B(NS,NY,*)
 C
       IF (NS .EQ. 1) THEN
-        CALL ZTRANS(A(1,1,1),B(1,1,1),NY,NZ)
+        CALL ZTRANS(A(1,1,1),B(1,1,1),NX,NY)
       ELSE
-        DO 30 J=1,NY
-          DO 20 K=1,NZ
-            DO 10 I=1,NS
-              B(I,K,J)=A(I,J,K)
+        DO 30 I=1,NX
+          DO 20 J=1,NY
+!DIR$ VECTOR ALIGNED
+            DO 10 K=1,NS
+              B(K,J,I)=A(K,I,J)
    10       CONTINUE
    20     CONTINUE
    30   CONTINUE
@@ -313,8 +322,8 @@ C
       IMPLICIT REAL*8 (A-H,O-Z)
       COMPLEX*16 A(NX,NY,*),B(NY,NX,*)
 C
-      DO 10 I=1,NS
-        CALL ZTRANS(A(1,1,I),B(1,1,I),NX,NY)
+      DO 10 K=1,NS
+        CALL ZTRANS(A(1,1,K),B(1,1,K),NX,NY)
    10 CONTINUE
       RETURN
       END

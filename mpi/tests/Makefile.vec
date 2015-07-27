@@ -1,6 +1,6 @@
 F77 = mpif77
 FFLAGS = -O3 -I../..
-#FFLAGS = -O3 -xW -I../..
+#FFLAGS = -O3 -xHost -I../..
 
 all: ptest1d ptest2d ptest3d pspeed1d pspeed2d pspeed3d
 

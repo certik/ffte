@@ -1,10 +1,10 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2011, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
-C         GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
+C         FACULTY OF ENGINEERING, INFORMATION AND SYSTEMS
 C         UNIVERSITY OF TSUKUBA
 C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
@@ -56,9 +56,14 @@ C
       COMPLEX*16 A(*),B(*)
       COMPLEX*16 C((NDA3+NP)*NBLK),D(NDA3)
       COMPLEX*16 WX(NDA3),WY(NDA3),WZ(NDA3)
+      DIMENSION LNX(3),LNY(3),LNZ(3)
       SAVE WX,WY,WZ
 C
       NN=NX*NY*(NZ/NPU)
+C
+      CALL FACTOR(NX,LNX)
+      CALL FACTOR(NY,LNY)
+      CALL FACTOR(NZ,LNZ)
 C
       IF (IOPT .EQ. 0) THEN
         CALL SETTBL(WX,NX)
@@ -69,6 +74,7 @@ C
 C
       IF (IOPT .EQ. 1 .OR. IOPT .EQ. 2) THEN
 !$OMP PARALLEL DO
+!DIR$ VECTOR ALIGNED
         DO 10 I=1,NN
           A(I)=DCONJG(A(I))
    10   CONTINUE
@@ -76,40 +82,38 @@ C
 C
       IF (IOPT .EQ. -1 .OR. IOPT .EQ. -2) THEN
 !$OMP PARALLEL PRIVATE(C,D)
-        CALL PZFFT3DF(A,A,A,B,B,B,C,C,D,WX,WY,WZ,NX,NY,NZ,ICOMM,NPU,
-     1                IOPT)
+        CALL PZFFT3DF(A,A,A,A,B,B,B,C,C,D,WX,WY,WZ,NX,NY,NZ,LNX,LNY,LNZ,
+     1                ICOMM,NPU,IOPT)
 !$OMP END PARALLEL
       ELSE
 !$OMP PARALLEL PRIVATE(C,D)
-        CALL PZFFT3DB(A,A,A,B,B,B,C,C,D,WX,WY,WZ,NX,NY,NZ,ICOMM,NPU,
-     1                IOPT)
+        CALL PZFFT3DB(A,A,A,B,B,B,B,C,C,D,WX,WY,WZ,NX,NY,NZ,LNX,LNY,LNZ,
+     1                ICOMM,NPU,IOPT)
 !$OMP END PARALLEL
       END IF
+C
       IF (IOPT .EQ. 1 .OR. IOPT .EQ. 2) THEN
         DN=1.0D0/(DBLE(NX)*DBLE(NY)*DBLE(NZ))
 !$OMP PARALLEL DO
+!DIR$ VECTOR ALIGNED
         DO 20 I=1,NN
           B(I)=DCONJG(B(I))*DN
    20   CONTINUE
       END IF
       RETURN
       END
-      SUBROUTINE PZFFT3DF(A,AXPYZ,AXYZP,B,BXPYZ,BXYZP,CY,CZ,D,WX,WY,WZ,
-     1                    NX,NY,NZ,ICOMM,NPU,IOPT)
+      SUBROUTINE PZFFT3DF(A,AXPYZ,AXYZ,AXYZP,B,BXPYZ,BXYZP,CY,CZ,D,
+     1                    WX,WY,WZ,NX,NY,NZ,LNX,LNY,LNZ,ICOMM,NPU,IOPT)
       IMPLICIT REAL*8 (A-H,O-Z)
       INCLUDE 'mpif.h'
       INCLUDE 'param.h'
-      COMPLEX*16 A(NX,NY,*),AXPYZ(NX/NPU,NPU,NY,*),
-     1           AXYZP(NX/NPU,NY,NZ/NPU,*)
-      COMPLEX*16 B(NX/NPU,NY,*),BXPYZ(NX/NPU,NPU,NY,*),
+      COMPLEX*16 A(NX,NY,*),AXPYZ(NX/NPU,NPU,NY,*),AXYZ(NX/NPU,NY,*),
+     1           AXYZP(NX/NPU,NY*(NZ/NPU),*)
+      COMPLEX*16 B(NX/NPU,NY,*),BXPYZ(NX/NPU,NPU,*),
      1           BXYZP(NX/NPU,NY,NZ/NPU,*)
       COMPLEX*16 CY(NY+NP,*),CZ(NZ+NP,*),D(*)
       COMPLEX*16 WX(*),WY(*),WZ(*)
-      DIMENSION LNX(3),LNY(3),LNZ(3)
-C
-      CALL FACTOR(NX,LNX)
-      CALL FACTOR(NY,LNY)
-      CALL FACTOR(NZ,LNZ)
+      DIMENSION LNX(*),LNY(*),LNZ(*)
 C
       NNX=NX/NPU
       NNZ=NZ/NPU
@@ -124,6 +128,7 @@ C
           DO 80 II=1,NNX,NBLK
             DO 40 JJ=1,NY,NBLK
               DO 30 I=II,MIN0(II+NBLK-1,NNX)
+!DIR$ VECTOR ALIGNED
                 DO 20 J=JJ,MIN0(JJ+NBLK-1,NY)
                   CY(J,I-II+1)=AXPYZ(I,L,J,K)
    20           CONTINUE
@@ -133,6 +138,7 @@ C
               CALL FFT235(CY(1,I-II+1),D,WY,NY,LNY)
    50       CONTINUE
             DO 70 J=1,NY
+!DIR$ VECTOR ALIGNED
               DO 60 I=II,MIN0(II+NBLK-1,NNX)
                 BXYZP(I,J,K,L)=CY(J,I-II+1)
    60         CONTINUE
@@ -140,18 +146,20 @@ C
    80     CONTINUE
    90   CONTINUE
   100 CONTINUE
-!$OMP SINGLE
-      CALL MPI_ALLTOALL(B,NN/NPU,MPI_DOUBLE_COMPLEX,
-     1                  A,NN/NPU,MPI_DOUBLE_COMPLEX,
-     2                  ICOMM,IERR)
-!$OMP END SINGLE
+!$OMP BARRIER
+!$OMP MASTER
+      CALL MPI_ALLTOALL(BXYZP,NN/NPU,MPI_DOUBLE_COMPLEX,AXYZ,NN/NPU,
+     1                  MPI_DOUBLE_COMPLEX,ICOMM,IERR)
+!$OMP END MASTER
+!$OMP BARRIER
 !$OMP DO
       DO 180 J=1,NY
         DO 170 II=1,NNX,NBLK
-          DO 130 L=1,NPU
+          DO 130 KK=1,NZ,NBLK
             DO 120 I=II,MIN0(II+NBLK-1,NNX)
-              DO 110 K=1,NNZ
-                CZ(K+(L-1)*NNZ,I-II+1)=AXYZP(I,J,K,L)
+!DIR$ VECTOR ALIGNED
+              DO 110 K=KK,MIN0(KK+NBLK-1,NZ)
+                CZ(K,I-II+1)=AXYZ(I,J,K)
   110         CONTINUE
   120       CONTINUE
   130     CONTINUE
@@ -159,6 +167,7 @@ C
             CALL FFT235(CZ(1,I-II+1),D,WZ,NZ,LNZ)
   140     CONTINUE
           DO 160 K=1,NZ
+!DIR$ VECTOR ALIGNED
             DO 150 I=II,MIN0(II+NBLK-1,NNX)
               B(I,J,K)=CZ(K,I-II+1)
   150       CONTINUE
@@ -166,43 +175,35 @@ C
   170   CONTINUE
   180 CONTINUE
       IF (IOPT .EQ. -2) RETURN
-!$OMP SINGLE
-      CALL MPI_ALLTOALL(B,NN/NPU,MPI_DOUBLE_COMPLEX,
-     1                  A,NN/NPU,MPI_DOUBLE_COMPLEX,
-     2                  ICOMM,IERR)
-!$OMP END SINGLE
+!$OMP BARRIER
+!$OMP MASTER
+      CALL MPI_ALLTOALL(B,NN/NPU,MPI_DOUBLE_COMPLEX,AXYZP,NN/NPU,
+     1                  MPI_DOUBLE_COMPLEX,ICOMM,IERR)
+!$OMP END MASTER
+!$OMP BARRIER
 !$OMP DO
-      DO 240 KK=1,NNZ,NBLK
-        DO 230 JJ=1,NY,NBLK
-          DO 220 L=1,NPU
-            DO 210 K=KK,MIN0(KK+NBLK-1,NNZ)
-              DO 200 J=JJ,MIN0(JJ+NBLK-1,NY)
-                DO 190 I=1,NNX
-                  BXPYZ(I,L,J,K)=AXYZP(I,J,K,L)
-  190           CONTINUE
-  200         CONTINUE
-  210       CONTINUE
-  220     CONTINUE
-  230   CONTINUE
-  240 CONTINUE
+      DO 210 J=1,NY*NNZ
+        DO 200 L=1,NPU
+!DIR$ VECTOR ALIGNED
+          DO 190 I=1,NNX
+            BXPYZ(I,L,J)=AXYZP(I,J,L)
+  190     CONTINUE
+  200   CONTINUE
+  210 CONTINUE
       RETURN
       END
-      SUBROUTINE PZFFT3DB(A,AXPYZ,AXYZP,B,BXPYZ,BXYZP,CY,CZ,D,WX,WY,WZ,
-     1                    NX,NY,NZ,ICOMM,NPU,IOPT)
+      SUBROUTINE PZFFT3DB(A,AXPYZ,AXYZP,B,BXPYZ,BXYZP,BXYZ,CY,CZ,D,
+     1                    WX,WY,WZ,NX,NY,NZ,LNX,LNY,LNZ,ICOMM,NPU,IOPT)
       IMPLICIT REAL*8 (A-H,O-Z)
       INCLUDE 'mpif.h'
       INCLUDE 'param.h'
-      COMPLEX*16 A(NX/NPU,NY,*),AXPYZ(NX/NPU,NPU,NY,*),
+      COMPLEX*16 A(NX/NPU,NY,*),AXPYZ(NX/NPU,NPU,*),
      1           AXYZP(NX/NPU,NY,NZ/NPU,*)
-      COMPLEX*16 B(NX,NY,*),BXPYZ(NX/NPU,NPU,NY,*),
-     1           BXYZP(NX/NPU,NY,NZ/NPU,*)
+      COMPLEX*16 B(NX,NY,*),BXPYZ(NX/NPU,NPU,NY,*),BXYZ(NX/NPU,NY,*),
+     1           BXYZP(NX/NPU,NY*(NZ/NPU),*)
       COMPLEX*16 CY(NY+NP,*),CZ(NZ+NP,*),D(*)
       COMPLEX*16 WX(*),WY(*),WZ(*)
-      DIMENSION LNX(3),LNY(3),LNZ(3)
-C
-      CALL FACTOR(NX,LNX)
-      CALL FACTOR(NY,LNY)
-      CALL FACTOR(NZ,LNZ)
+      DIMENSION LNX(*),LNY(*),LNZ(*)
 C
       NNX=NX/NPU
       NNZ=NZ/NPU
@@ -210,76 +211,75 @@ C
 C
       IF (IOPT .EQ. 1) THEN
 !$OMP DO
-        DO 60 KK=1,NNZ,NBLK
-          DO 50 JJ=1,NY,NBLK
-            DO 40 L=1,NPU
-              DO 30 K=KK,MIN0(KK+NBLK-1,NNZ)
-                DO 20 J=JJ,MIN0(JJ+NBLK-1,NY)
-                  DO 10 I=1,NNX
-                    BXYZP(I,J,K,L)=AXPYZ(I,L,J,K)
-   10             CONTINUE
-   20           CONTINUE
-   30         CONTINUE
-   40       CONTINUE
-   50     CONTINUE
-   60   CONTINUE
-!$OMP SINGLE
-        CALL MPI_ALLTOALL(B,NN/NPU,MPI_DOUBLE_COMPLEX,
-     1                    A,NN/NPU,MPI_DOUBLE_COMPLEX,
-     2                    ICOMM,IERR)
-!$OMP END SINGLE
+        DO 30 L=1,NPU
+          DO 20 J=1,NY*NNZ
+!DIR$ VECTOR ALIGNED
+            DO 10 I=1,NNX
+              BXYZP(I,J,L)=AXPYZ(I,L,J)
+   10       CONTINUE
+   20     CONTINUE
+   30   CONTINUE
+!$OMP BARRIER
+!$OMP MASTER
+        CALL MPI_ALLTOALL(BXYZP,NN/NPU,MPI_DOUBLE_COMPLEX,A,NN/NPU,
+     1                    MPI_DOUBLE_COMPLEX,ICOMM,IERR)
+!$OMP END MASTER
+!$OMP BARRIER
       END IF
 !$OMP DO
-      DO 150 J=1,NY
-        DO 140 II=1,NNX,NBLK
-          DO 90 KK=1,NZ,NBLK
-            DO 80 I=II,MIN0(II+NBLK-1,NNX)
-              DO 70 K=KK,MIN0(KK+NBLK-1,NZ)
+      DO 110 J=1,NY
+        DO 100 II=1,NNX,NBLK
+          DO 60 KK=1,NZ,NBLK
+            DO 50 I=II,MIN0(II+NBLK-1,NNX)
+!DIR$ VECTOR ALIGNED
+              DO 40 K=KK,MIN0(KK+NBLK-1,NZ)
                 CZ(K,I-II+1)=A(I,J,K)
-   70         CONTINUE
+   40         CONTINUE
+   50       CONTINUE
+   60     CONTINUE
+          DO 70 I=II,MIN0(II+NBLK-1,NNX)
+            CALL FFT235(CZ(1,I-II+1),D,WZ,NZ,LNZ)
+   70     CONTINUE
+          DO 90 K=1,NZ
+!DIR$ VECTOR ALIGNED
+            DO 80 I=II,MIN0(II+NBLK-1,NNX)
+              BXYZ(I,J,K)=CZ(K,I-II+1)
    80       CONTINUE
    90     CONTINUE
-          DO 100 I=II,MIN0(II+NBLK-1,NNX)
-            CALL FFT235(CZ(1,I-II+1),D,WZ,NZ,LNZ)
-  100     CONTINUE
-          DO 130 L=1,NPU
-            DO 120 K=1,NNZ
-              DO 110 I=II,MIN0(II+NBLK-1,NNX)
-                BXYZP(I,J,K,L)=CZ(K+(L-1)*NNZ,I-II+1)
-  110         CONTINUE
-  120       CONTINUE
-  130     CONTINUE
-  140   CONTINUE
-  150 CONTINUE
-!$OMP SINGLE
-      CALL MPI_ALLTOALL(B,NN/NPU,MPI_DOUBLE_COMPLEX,
-     1                  A,NN/NPU,MPI_DOUBLE_COMPLEX,
-     2                  ICOMM,IERR)
-!$OMP END SINGLE
+  100   CONTINUE
+  110 CONTINUE
+!$OMP BARRIER
+!$OMP MASTER
+      CALL MPI_ALLTOALL(BXYZ,NN/NPU,MPI_DOUBLE_COMPLEX,AXYZP,NN/NPU,
+     1                  MPI_DOUBLE_COMPLEX,ICOMM,IERR)
+!$OMP END MASTER
+!$OMP BARRIER
 !$OMP DO
-      DO 250 K=1,NNZ
-        DO 230 L=1,NPU
-          DO 220 II=1,NNX,NBLK
-            DO 180 JJ=1,NY,NBLK
-              DO 170 I=II,MIN0(II+NBLK-1,NNX)
-                DO 160 J=JJ,MIN0(JJ+NBLK-1,NY)
+      DO 210 K=1,NNZ
+        DO 190 L=1,NPU
+          DO 180 II=1,NNX,NBLK
+            DO 140 JJ=1,NY,NBLK
+              DO 130 I=II,MIN0(II+NBLK-1,NNX)
+!DIR$ VECTOR ALIGNED
+                DO 120 J=JJ,MIN0(JJ+NBLK-1,NY)
                   CY(J,I-II+1)=AXYZP(I,J,K,L)
-  160           CONTINUE
-  170         CONTINUE
-  180       CONTINUE
-            DO 190 I=II,MIN0(II+NBLK-1,NNX)
+  120           CONTINUE
+  130         CONTINUE
+  140       CONTINUE
+            DO 150 I=II,MIN0(II+NBLK-1,NNX)
               CALL FFT235(CY(1,I-II+1),D,WY,NY,LNY)
-  190       CONTINUE
-            DO 210 J=1,NY
-              DO 200 I=II,MIN0(II+NBLK-1,NNX)
+  150       CONTINUE
+            DO 170 J=1,NY
+!DIR$ VECTOR ALIGNED
+              DO 160 I=II,MIN0(II+NBLK-1,NNX)
                 BXPYZ(I,L,J,K)=CY(J,I-II+1)
-  200         CONTINUE
-  210       CONTINUE
-  220     CONTINUE
-  230   CONTINUE
-        DO 240 J=1,NY
+  160         CONTINUE
+  170       CONTINUE
+  180     CONTINUE
+  190   CONTINUE
+        DO 200 J=1,NY
           CALL FFT235(B(1,J,K),D,WX,NX,LNX)
-  240   CONTINUE
-  250 CONTINUE
+  200   CONTINUE
+  210 CONTINUE
       RETURN
       END

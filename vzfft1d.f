@@ -1,10 +1,10 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2011, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
-C         GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
+C         FACULTY OF ENGINEERING, INFORMATION AND SYSTEMS
 C         UNIVERSITY OF TSUKUBA
 C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
@@ -39,22 +39,20 @@ C
       CALL FACTOR(N,IP)
 C
       IF (IOPT .EQ. 1) THEN
+!DIR$ VECTOR ALIGNED
         DO 10 I=1,N
           A(I)=DCONJG(A(I))
    10   CONTINUE
       END IF
 C
-      DO 20 I=1,3
-        LNX(I)=(IP(I)+1)/2
-        LNY(I)=IP(I)-LNX(I)
-   20 CONTINUE
-      NX=(2**LNX(1))*(3**LNX(2))*(5**LNX(3))
-      NY=(2**LNY(1))*(3**LNY(2))*(5**LNY(3))
+      CALL GETNXNY(N,NX,NY)
+      CALL FACTOR(NX,LNX)
+      CALL FACTOR(NY,LNY)
 C
       IF (IOPT .EQ. 0) THEN
         CALL SETTBL(WX,NX)
         CALL SETTBL(WY,NY)
-        CALL SETTBL2(B(N+1),NY,NX)
+        CALL SETTBL2(B(N+1),NX,NY)
         RETURN
       END IF
 C
@@ -64,9 +62,10 @@ C
 C
       IF (IOPT .EQ. 1) THEN
         DN=1.0D0/DBLE(N)
-        DO 30 I=1,N
+!DIR$ VECTOR ALIGNED
+        DO 20 I=1,N
           A(I)=DCONJG(A(I))*DN
-   30   CONTINUE
+   20   CONTINUE
       END IF
       RETURN
       END
@@ -79,6 +78,7 @@ C
       CALL FACTOR(NY,LNY)
 C
       IF (NX .EQ. 1 .OR. NY .EQ. 1) THEN
+!DIR$ VECTOR ALIGNED
         DO 10 I=1,NX*NY
           B(I)=A(I)*W(I)
    10   CONTINUE
@@ -92,67 +92,60 @@ C
       END IF
       RETURN
       END
-      SUBROUTINE ZTRANSMULA(A,B,W,N1,N2)
+      SUBROUTINE ZTRANSMULA(A,B,W,NX,NY)
       IMPLICIT REAL*8 (A-H,O-Z)
-      COMPLEX*16 A(N1,*),B(N2,*),W(N2,*)
+      COMPLEX*16 A(NX,*),B(NY,*),W(NX,*)
 C
-      DO 20 I=1,N1
-        DO 10 J=1,N2
-          B(J,I)=A(I,J)*W(J,I)
+      DO 20 I=1,NX
+!DIR$ VECTOR ALIGNED
+        DO 10 J=1,NY
+          B(J,I)=A(I,J)*W(I,J)
    10   CONTINUE
    20 CONTINUE
       RETURN
       END
-      SUBROUTINE ZTRANSMULB(A,B,W,N1,N2)
+      SUBROUTINE ZTRANSMULB(A,B,W,NX,NY)
       IMPLICIT REAL*8 (A-H,O-Z)
-      COMPLEX*16 A(N1,*),B(N2,*),W(N2,*)
+      COMPLEX*16 A(NX,*),B(NY,*),W(NX,*)
 C
-      IF (N2 .GE. N1) THEN
-        DO 20 I=0,N1-1
-          DO 10 J=1,N1-I
-            B(J,I+J)=A(I+J,J)*W(J,I+J)
+      IF (NY .GE. NX) THEN
+        DO 20 I=0,NX-1
+!DIR$ VECTOR ALIGNED
+          DO 10 J=1,NX-I
+            B(J,I+J)=A(I+J,J)*W(I+J,J)
    10     CONTINUE
    20   CONTINUE
-        DO 40 I=1,N2-N1
-          DO 30 J=1,N1
-            B(I+J,J)=A(J,I+J)*W(I+J,J)
+        DO 40 I=1,NY-NX
+!DIR$ VECTOR ALIGNED
+          DO 30 J=1,NX
+            B(I+J,J)=A(J,I+J)*W(J,I+J)
    30     CONTINUE
    40   CONTINUE
-        DO 60 I=N2-N1+1,N2-1
-          DO 50 J=1,N2-I
-            B(I+J,J)=A(J,I+J)*W(I+J,J)
+        DO 60 I=NY-NX+1,NY-1
+!DIR$ VECTOR ALIGNED
+          DO 50 J=1,NY-I
+            B(I+J,J)=A(J,I+J)*W(J,I+J)
    50     CONTINUE
    60   CONTINUE
       ELSE
-        DO 80 I=0,N2-1
-          DO 70 J=1,N2-I
-            B(I+J,J)=A(J,I+J)*W(I+J,J)
+        DO 80 I=0,NY-1
+!DIR$ VECTOR ALIGNED
+          DO 70 J=1,NY-I
+            B(I+J,J)=A(J,I+J)*W(J,I+J)
    70     CONTINUE
    80   CONTINUE
-        DO 100 I=1,N1-N2
-          DO 90 J=1,N2
-            B(J,I+J)=A(I+J,J)*W(J,I+J)
+        DO 100 I=1,NX-NY
+!DIR$ VECTOR ALIGNED
+          DO 90 J=1,NY
+            B(J,I+J)=A(I+J,J)*W(I+J,J)
    90     CONTINUE
   100   CONTINUE
-        DO 120 I=N1-N2+1,N1-1
-          DO 110 J=1,N1-I
-            B(J,I+J)=A(I+J,J)*W(J,I+J)
+        DO 120 I=NX-NY+1,NX-1
+!DIR$ VECTOR ALIGNED
+          DO 110 J=1,NX-I
+            B(J,I+J)=A(I+J,J)*W(I+J,J)
   110     CONTINUE
   120   CONTINUE
       END IF
-      RETURN
-      END
-      SUBROUTINE SETTBL2(W,NX,NY)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION W(2,NX,*)
-C
-      PI2=8.0D0*DATAN(1.0D0)
-      PX=-PI2/(DBLE(NX)*DBLE(NY))
-      DO 20 K=1,NY
-        DO 10 J=1,NX
-          W(1,J,K)=DCOS(PX*DBLE(J-1)*DBLE(K-1))
-          W(2,J,K)=DSIN(PX*DBLE(J-1)*DBLE(K-1))
-   10   CONTINUE
-   20 CONTINUE
       RETURN
       END

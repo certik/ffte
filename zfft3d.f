@@ -1,10 +1,10 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2011, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
-C         GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
+C         FACULTY OF ENGINEERING, INFORMATION AND SYSTEMS
 C         UNIVERSITY OF TSUKUBA
 C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
@@ -53,6 +53,7 @@ C
 C
       IF (IOPT .EQ. 1) THEN
 !$OMP PARALLEL DO
+!DIR$ VECTOR ALIGNED
         DO 10 I=1,NX*NY*NZ
           A(I)=DCONJG(A(I))
    10   CONTINUE
@@ -65,6 +66,7 @@ C
       IF (IOPT .EQ. 1) THEN
         DN=1.0D0/(DBLE(NX)*DBLE(NY)*DBLE(NZ))
 !$OMP PARALLEL DO
+!DIR$ VECTOR ALIGNED
         DO 20 I=1,NX*NY*NZ
           A(I)=DCONJG(A(I))*DN
    20   CONTINUE
@@ -74,7 +76,8 @@ C
       SUBROUTINE ZFFT3D0(A,BY,BZ,C,WX,WY,WZ,NX,NY,NZ,LNX,LNY,LNZ)
       IMPLICIT REAL*8 (A-H,O-Z)
       INCLUDE 'param.h'
-      COMPLEX*16 A(NX,NY,*),BY(NY+NP,*),BZ(NZ+NP,*),C(*)
+      COMPLEX*16 A(NX,NY,*)
+      COMPLEX*16 BY(NY+NP,*),BZ(NZ+NP,*),C(*)
       COMPLEX*16 WX(*),WY(*),WZ(*)
       DIMENSION LNX(*),LNY(*),LNZ(*)
 C
@@ -83,6 +86,7 @@ C
         DO 70 II=1,NX,NBLK
           DO 30 KK=1,NZ,NBLK
             DO 20 I=II,MIN0(II+NBLK-1,NX)
+!DIR$ VECTOR ALIGNED
               DO 10 K=KK,MIN0(KK+NBLK-1,NZ)
                 BZ(K,I-II+1)=A(I,J,K)
    10         CONTINUE
@@ -92,6 +96,7 @@ C
             CALL FFT235(BZ(1,I-II+1),C,WZ,NZ,LNZ)
    40     CONTINUE
           DO 60 K=1,NZ
+!DIR$ VECTOR ALIGNED
             DO 50 I=II,MIN0(II+NBLK-1,NX)
               A(I,J,K)=BZ(K,I-II+1)
    50       CONTINUE
@@ -103,6 +108,7 @@ C
         DO 150 II=1,NX,NBLK
           DO 110 JJ=1,NY,NBLK
             DO 100 I=II,MIN0(II+NBLK-1,NX)
+!DIR$ VECTOR ALIGNED
               DO 90 J=JJ,MIN0(JJ+NBLK-1,NY)
                 BY(J,I-II+1)=A(I,J,K)
    90         CONTINUE
@@ -112,6 +118,7 @@ C
             CALL FFT235(BY(1,I-II+1),C,WY,NY,LNY)
   120     CONTINUE
           DO 140 J=1,NY
+!DIR$ VECTOR ALIGNED
             DO 130 I=II,MIN0(II+NBLK-1,NX)
               A(I,J,K)=BY(J,I-II+1)
   130       CONTINUE
