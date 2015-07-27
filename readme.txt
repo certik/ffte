@@ -34,27 +34,27 @@ Files:
             pspeed3d.f  : Speed test program for pzfft3d (MPI version)
 
 Reference:
-    1. Daisuke Takahashi: A Parallel 3-D FFT Algorithm on Clusters of
-       Vector SMPs, Proc. 5th International Workshop on Applied
-       Parallel Computing (PARA 2000), Lecture Notes in Computer
-       Science, No. 1947, Springer-Verlag, pp. 316--323, 2001.
-
-    2. Daisuke Takahashi: A Blocking Algorithm for FFT on Cache-Based
+    1. Daisuke Takahashi: A Blocking Algorithm for FFT on Cache-Based
        Processors, Proc. 9th International Conference on High
        Performance Computing and Networking Europe (HPCN Europe 2001),
        Lecture Notes in Computer Science, No. 2110, Springer-Verlag,
        pp. 551--554, 2001.
 
-    3. Daisuke Takahashi: A Blocking Algorithm for Parallel 1-D FFT on
+    2. Daisuke Takahashi: A Blocking Algorithm for Parallel 1-D FFT on
        Shared-Memory Parallel Computers, Proc. 6th International
        Conference on Applied Parallel Computing (PARA 2002),
-       Lecture Notes in Computer Science, Springer-Verlag, (to appear).
+       Lecture Notes in Computer Science, No. 2367, Springer-Verlag,
+       pp. 380--389, 2002.
+
+    3. Daisuke Takahashi: Efficient implementation of parallel
+       three-dimensional FFT on clusters of PCs, Computer Physics
+       Communications, Vol. 152, pp. 144--150, 2003.
 
 Copyright:
-    Copyright(C) 2000-2002 Daisuke Takahashi
+    Copyright(C) 2000-2003 Daisuke Takahashi
     Institute of Information Sciences and Electronics,
     University of Tsukuba
-    1-1-1 Tennodai, Tsukuba-shi, Ibaraki 305-8573, Japan
+    1-1-1 Tennodai, Tsukuba, Ibaraki 305-8573, Japan
     e-mail: daisuke@is.tsukuba.ac.jp
     You may use, copy, modify this code for any purpose and
     without fee.
