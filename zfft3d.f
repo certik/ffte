@@ -1,0 +1,178 @@
+C
+C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
+C
+C     (C) COPYRIGHT SOFTWARE, 2000, 2001, 2002, ALL RIGHTS RESERVED
+C                BY
+C         DAISUKE TAKAHASHI
+C         INSTITURE OF INFORMATION SCIENCES AND ELECTRONICS,
+C         UNIVERSITY OF TSUKUBA
+C         1-1-1 TENNODAI, TSUKUBA-SHI, IBARAKI 305-8573, JAPAN
+C         E-MAIL: daisuke@is.tsukuba.ac.jp
+C
+C
+C     3-DIMENSIONAL COMPLEX FFT ROUTINE
+C
+C     FORTRAN77 SOURCE PROGRAM
+C
+C     CALL ZFFT3D(A,NX,NY,NZ,IOPT)
+C
+C     A(NX,NY,NZ) IS COMPLEX INPUT/OUTPUT VECTOR (COMPLEX*16)
+C     NX IS THE LENGTH OF THE TRANSFORMS IN THE X-DIRECTION (INTEGER*4)
+C     NY IS THE LENGTH OF THE TRANSFORMS IN THE Y-DIRECTION (INTEGER*4)
+C     NZ IS THE LENGTH OF THE TRANSFORMS IN THE Z-DIRECTION (INTEGER*4)
+C       ------------------------------------
+C         NX = (2**IP) * (3**IQ) * (5**IR)
+C         NY = (2**JP) * (3**JQ) * (5**JR)
+C         NZ = (2**KP) * (3**KQ) * (5**KR)
+C       ------------------------------------
+C     IOPT = 1 FOR FORWARD TRANSFORM (INTEGER*4)
+C          = 2 FOR INVERSE TRANSFORM
+C
+C     WRITTEN BY DAISUKE TAKAHASHI
+C
+      SUBROUTINE ZFFT3D(A,NX,NY,NZ,IOPT)
+      IMPLICIT REAL*8 (A-H,O-Z)
+      INCLUDE 'param.h'
+      COMPLEX*16 A(*)
+      COMPLEX*16 B((NDA3+NP)*NBLK+NP),C(NDA3+NP)
+      COMPLEX*16 WX(NDA3/3*2+NP),WY(NDA3/3*2+NP),WZ(NDA3/3*2+NP)
+      DATA NX0,NY0,NZ0/0,0,0/
+      SAVE NX0,NY0,NZ0,WX,WY,WZ
+C
+      IF (NX .NE. NX0) THEN
+        CALL SETTBL(WX,NX)
+        NX0=NX
+      END IF
+      IF (NY .NE. NY0) THEN
+        CALL SETTBL(WY,NY)
+        NY0=NY
+      END IF
+      IF (NZ .NE. NZ0) THEN
+        CALL SETTBL(WZ,NZ)
+        NZ0=NZ
+      END IF
+      IF (IOPT .EQ. 1) THEN
+!$OMP PARALLEL PRIVATE(B,C)
+        CALL ZFFT3D0(A,B,B,C,WX,WY,WZ,NX,NY,NZ)
+!$OMP END PARALLEL
+      ELSE
+!$OMP PARALLEL PRIVATE(B,C)
+        CALL ZFFTR3D0(A,B,B,C,WX,WY,WZ,NX,NY,NZ)
+!$OMP END PARALLEL
+      END IF
+      RETURN
+      END
+      SUBROUTINE ZFFT3D0(A,BY,BZ,C,WX,WY,WZ,NX,NY,NZ)
+      IMPLICIT REAL*8 (A-H,O-Z)
+      INCLUDE 'param.h'
+      COMPLEX*16 A(NX,NY,*),BY(NY+NP,*),BZ(NZ+NP,*),C(*)
+      COMPLEX*16 WX(*),WY(*),WZ(*)
+      DIMENSION LNX(3),LNY(3),LNZ(3)
+C
+      CALL FACTOR(NX,LNX)
+      CALL FACTOR(NY,LNY)
+      CALL FACTOR(NZ,LNZ)
+C
+!$OMP DO
+      DO 80 J=1,NY
+        DO 70 II=1,NX,NBLK
+          DO 30 KK=1,NZ,NBLK
+            DO 20 I=II,MIN0(II+NBLK-1,NX)
+              DO 10 K=KK,MIN0(KK+NBLK-1,NZ)
+                BZ(K,I-II+1)=A(I,J,K)
+   10         CONTINUE
+   20       CONTINUE
+   30     CONTINUE
+          DO 40 I=II,MIN0(II+NBLK-1,NX)
+            CALL FFT23458(BZ(1,I-II+1),C,WZ,NZ,LNZ)
+   40     CONTINUE
+          DO 60 K=1,NZ
+            DO 50 I=II,MIN0(II+NBLK-1,NX)
+              A(I,J,K)=BZ(K,I-II+1)
+   50       CONTINUE
+   60     CONTINUE
+   70   CONTINUE
+   80 CONTINUE
+!$OMP DO
+      DO 170 K=1,NZ
+        DO 150 II=1,NX,NBLK
+          DO 110 JJ=1,NY,NBLK
+            DO 100 I=II,MIN0(II+NBLK-1,NX)
+              DO 90 J=JJ,MIN0(JJ+NBLK-1,NY)
+                BY(J,I-II+1)=A(I,J,K)
+   90         CONTINUE
+  100       CONTINUE
+  110     CONTINUE
+          DO 120 I=II,MIN0(II+NBLK-1,NX)
+            CALL FFT23458(BY(1,I-II+1),C,WY,NY,LNY)
+  120     CONTINUE
+          DO 140 J=1,NY
+            DO 130 I=II,MIN0(II+NBLK-1,NX)
+              A(I,J,K)=BY(J,I-II+1)
+  130       CONTINUE
+  140     CONTINUE
+  150   CONTINUE
+        DO 160 J=1,NY
+          CALL FFT23458(A(1,J,K),C,WX,NX,LNX)
+  160   CONTINUE
+  170 CONTINUE
+      RETURN
+      END
+      SUBROUTINE ZFFTR3D0(A,BY,BZ,C,WX,WY,WZ,NX,NY,NZ)
+      IMPLICIT REAL*8 (A-H,O-Z)
+      INCLUDE 'param.h'
+      COMPLEX*16 A(NX,NY,*),BY(NY+NP,*),BZ(NZ+NP,*),C(*)
+      COMPLEX*16 WX(*),WY(*),WZ(*)
+      DIMENSION LNX(3),LNY(3),LNZ(3)
+C
+      CALL FACTOR(NX,LNX)
+      CALL FACTOR(NY,LNY)
+      CALL FACTOR(NZ,LNZ)
+C
+      DN=1.0D0/DBLE(NX*NY*NZ)
+C
+!$OMP DO
+      DO 80 J=1,NY
+        DO 70 II=1,NX,NBLK
+          DO 30 KK=1,NZ,NBLK
+            DO 20 I=II,MIN0(II+NBLK-1,NX)
+              DO 10 K=KK,MIN0(KK+NBLK-1,NZ)
+                BZ(K,I-II+1)=A(I,J,K)
+   10         CONTINUE
+   20       CONTINUE
+   30     CONTINUE
+          DO 40 I=II,MIN0(II+NBLK-1,NX)
+            CALL FFT23458R(BZ(1,I-II+1),C,WZ,NZ,LNZ)
+   40     CONTINUE
+          DO 60 K=1,NZ
+            DO 50 I=II,MIN0(II+NBLK-1,NX)
+              A(I,J,K)=BZ(K,I-II+1)
+   50       CONTINUE
+   60     CONTINUE
+   70   CONTINUE
+   80 CONTINUE
+!$OMP DO
+      DO 170 K=1,NZ
+        DO 150 II=1,NX,NBLK
+          DO 110 JJ=1,NY,NBLK
+            DO 100 I=II,MIN0(II+NBLK-1,NX)
+              DO 90 J=JJ,MIN0(JJ+NBLK-1,NY)
+                BY(J,I-II+1)=A(I,J,K)
+   90         CONTINUE
+  100       CONTINUE
+  110     CONTINUE
+          DO 120 I=II,MIN0(II+NBLK-1,NX)
+            CALL FFT23458R(BY(1,I-II+1),C,WY,NY,LNY)
+  120     CONTINUE
+          DO 140 J=1,NY
+            DO 130 I=II,MIN0(II+NBLK-1,NX)
+              A(I,J,K)=BY(J,I-II+1)*DN
+  130       CONTINUE
+  140     CONTINUE
+  150   CONTINUE
+        DO 160 J=1,NY
+          CALL FFT23458R(A(1,J,K),C,WX,NX,LNX)
+  160   CONTINUE
+  170 CONTINUE
+      RETURN
+      END

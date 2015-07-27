@@ -1,0 +1,58 @@
+F77 = mpif77
+FFLAGS = -O3 -ffast-math -fomit-frame-pointer -malign-double -I../..
+
+all: ptest1d ptest2d ptest3d pspeed1d pspeed2d pspeed3d
+
+ptest1d : ptest1d.o pzfft1d.o pztrans.o kernel.o
+	$(F77) ptest1d.o pzfft1d.o pztrans.o kernel.o -o ptest1d
+
+ptest2d : ptest2d.o pzfft2d.o pztrans.o kernel.o
+	$(F77) ptest2d.o pzfft2d.o pztrans.o kernel.o -o ptest2d
+
+ptest3d : ptest3d.o pzfft3d.o pztrans.o kernel.o
+	$(F77) ptest3d.o pzfft3d.o pztrans.o kernel.o -o ptest3d
+
+ptest1d.o : ptest1d.f ../../param.h
+	$(F77) $(FFLAGS) -c ptest1d.f -o ptest1d.o
+
+ptest2d.o : ptest2d.f ../../param.h
+	$(F77) $(FFLAGS) -c ptest2d.f -o ptest2d.o
+
+ptest3d.o : ptest3d.f ../../param.h
+	$(F77) $(FFLAGS) -c ptest3d.f -o ptest3d.o
+
+pspeed1d : pspeed1d.o pzfft1d.o pztrans.o kernel.o
+	$(F77) pspeed1d.o pzfft1d.o pztrans.o kernel.o -o pspeed1d
+
+pspeed2d : pspeed2d.o pzfft2d.o pztrans.o kernel.o
+	$(F77) pspeed2d.o pzfft2d.o pztrans.o kernel.o -o pspeed2d
+
+pspeed3d : pspeed3d.o pzfft3d.o pztrans.o kernel.o
+	$(F77) pspeed3d.o pzfft3d.o pztrans.o kernel.o -o pspeed3d
+
+pspeed1d.o : pspeed1d.f ../../param.h
+	$(F77) $(FFLAGS) -c pspeed1d.f -o pspeed1d.o
+
+pspeed2d.o : pspeed2d.f ../../param.h
+	$(F77) $(FFLAGS) -c pspeed2d.f -o pspeed2d.o
+
+pspeed3d.o : pspeed3d.f ../../param.h
+	$(F77) $(FFLAGS) -c pspeed3d.f -o pspeed3d.o
+
+pzfft1d.o : ../pzfft1d.f ../../param.h
+	$(F77) $(FFLAGS) -c ../pzfft1d.f -o pzfft1d.o
+
+pzfft2d.o : ../pzfft2d.f ../../param.h
+	$(F77) $(FFLAGS) -c ../pzfft2d.f -o pzfft2d.o
+
+pzfft3d.o : ../pzfft3d.f ../../param.h
+	$(F77) $(FFLAGS) -c ../pzfft3d.f -o pzfft3d.o
+
+pztrans.o : ../pztrans.f
+	$(F77) $(FFLAGS) -c ../pztrans.f -o pztrans.o
+
+kernel.o : ../../kernel.f
+	$(F77) $(FFLAGS) -c ../../kernel.f -o kernel.o
+
+clean:
+	rm -f *.o
