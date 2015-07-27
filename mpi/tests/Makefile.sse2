@@ -2,8 +2,8 @@ CC = mpicc
 F77 = mpif77
 CFLAGS = -O3 -fomit-frame-pointer -msse2 -malign-double -I../..
 FFLAGS = -O3 -fomit-frame-pointer -msse2 -malign-double -I../..
-#CFLAGS = -O3 -tpp7 -xW -I../..
-#FFLAGS = -O3 -tpp7 -xW -I../..
+#CFLAGS = -O3 -xW -fno-alias -I../..
+#FFLAGS = -O3 -xW -fno-alias -I../..
 
 all: ptest1d ptest2d ptest3d pspeed1d pspeed2d pspeed3d
 

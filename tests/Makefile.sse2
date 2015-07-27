@@ -5,8 +5,8 @@ FFLAGS = -O3 -fomit-frame-pointer -msse2 -malign-double -I..
 LDFLAGS =
 #CC = icc
 #F77 = ifc
-#CFLAGS = -O3 -tpp7 -xW -I..
-#FFLAGS = -O3 -tpp7 -xW -I..
+#CFLAGS = -O3 -xW -fno-alias -I..
+#FFLAGS = -O3 -xW -fno-alias -I..
 #LDFLAGS = -Vaxlib
 
 all: test1d test2d test3d speed1d speed2d speed3d

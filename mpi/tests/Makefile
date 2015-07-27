@@ -1,5 +1,6 @@
 F77 = mpif77
 FFLAGS = -O3 -fomit-frame-pointer -malign-double -I../..
+#FFLAGS = -O3 -xW -fno-alias -I../..
 
 all: ptest1d ptest2d ptest3d pspeed1d pspeed2d pspeed3d
 

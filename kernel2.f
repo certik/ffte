@@ -1,7 +1,7 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2003, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
 C         INSTITURE OF INFORMATION SCIENCES AND ELECTRONICS
@@ -20,6 +20,7 @@ C
       IMPLICIT REAL*8 (A-H,O-Z)
       DIMENSION A(2,M,*),B(2,M,*)
 C
+!DIR$ VECTOR ALIGNED
       DO 10 I=1,M
         X0=A(1,I,1)
         Y0=A(2,I,1)
@@ -37,6 +38,7 @@ C
       DIMENSION A(2,L,*),B(2,3,*),W(2,*)
       DATA C31/0.86602540378443865D0/C32/0.5D0/
 C
+!DIR$ VECTOR ALIGNED
       DO 10 J=1,L
         WR1=W(1,J)
         WI1=W(2,J)
@@ -62,6 +64,7 @@ C
       DIMENSION A(2,M,L,*),B(2,M,3,*),W(2,*)
       DATA C31/0.86602540378443865D0/C32/0.5D0/
 C
+!DIR$ VECTOR ALIGNED
       DO 10 I=1,M
         X0=A(1,I,1,2)+A(1,I,1,3)
         Y0=A(2,I,1,2)+A(2,I,1,3)
@@ -81,6 +84,7 @@ C
         WI1=W(2,J)
         WR2=WR1*WR1-WI1*WI1
         WI2=WR1*WI1+WR1*WI1
+!DIR$ VECTOR ALIGNED
         DO 20 I=1,M
           X0=A(1,I,J,2)+A(1,I,J,3)
           Y0=A(2,I,J,2)+A(2,I,J,3)
@@ -102,6 +106,7 @@ C
       IMPLICIT REAL*8 (A-H,O-Z)
       DIMENSION A(2,L,*),B(2,4,*),W(2,*)
 C
+!DIR$ VECTOR ALIGNED
       DO 10 J=1,L
         WR1=W(1,J)
         WI1=W(2,J)
@@ -132,6 +137,7 @@ C
       IMPLICIT REAL*8 (A-H,O-Z)
       DIMENSION A(2,M,L,*),B(2,M,4,*),W(2,*)
 C
+!DIR$ VECTOR ALIGNED
       DO 10 I=1,M
         X0=A(1,I,1,1)+A(1,I,1,3)
         Y0=A(2,I,1,1)+A(2,I,1,3)
@@ -157,6 +163,7 @@ C
         WI2=WR1*WI1+WR1*WI1
         WR3=WR1*WR2-WI1*WI2
         WI3=WR1*WI2+WI1*WR2
+!DIR$ VECTOR ALIGNED
         DO 20 I=1,M
           X0=A(1,I,J,1)+A(1,I,J,3)
           Y0=A(2,I,J,1)+A(2,I,J,3)
@@ -184,6 +191,7 @@ C
       DATA C51/0.95105651629515357D0/C52/0.61803398874989485D0/
      1     C53/0.55901699437494742D0/C54/0.25D0/
 C
+!DIR$ VECTOR ALIGNED
       DO 10 J=1,L
         WR1=W(1,J)
         WI1=W(2,J)
@@ -234,6 +242,7 @@ C
       DATA C51/0.95105651629515357D0/C52/0.61803398874989485D0/
      1     C53/0.55901699437494742D0/C54/0.25D0/
 C
+!DIR$ VECTOR ALIGNED
       DO 10 I=1,M
         X0=A(1,I,1,2)+A(1,I,1,5)
         Y0=A(2,I,1,2)+A(2,I,1,5)
@@ -277,6 +286,7 @@ C
         WI3=WR1*WI2+WI1*WR2
         WR4=WR2*WR2-WI2*WI2
         WI4=WR2*WI2+WR2*WI2
+!DIR$ VECTOR ALIGNED
         DO 20 I=1,M
           X0=A(1,I,J,2)+A(1,I,J,5)
           Y0=A(2,I,J,2)+A(2,I,J,5)
@@ -319,6 +329,7 @@ C
       DIMENSION A(2,L,*),B(2,8,*),W(2,*)
       DATA C81/0.70710678118654752D0/
 C
+!DIR$ VECTOR ALIGNED
       DO 10 J=1,L
         WR1=W(1,J)
         WI1=W(2,J)
@@ -390,6 +401,7 @@ C
       DIMENSION A(2,M,L,*),B(2,M,8,*),W(2,*)
       DATA C81/0.70710678118654752D0/
 C
+!DIR$ VECTOR ALIGNED
       DO 10 I=1,M
         X0=A(1,I,1,1)+A(1,I,1,5)
         Y0=A(2,I,1,1)+A(2,I,1,5)
@@ -455,6 +467,7 @@ C
         WI6=WR3*WI3+WR3*WI3
         WR7=WR3*WR4-WI3*WI4
         WI7=WR3*WI4+WI3*WR4
+!DIR$ VECTOR ALIGNED
         DO 20 I=1,M
           X0=A(1,I,J,1)+A(1,I,J,5)
           Y0=A(2,I,J,1)+A(2,I,J,5)

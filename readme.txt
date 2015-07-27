@@ -55,7 +55,7 @@ Reference:
        Communications, Vol. 152, pp. 144--150, 2003.
 
 Copyright:
-    Copyright(C) 2000-2003 Daisuke Takahashi
+    Copyright(C) 2000-2004 Daisuke Takahashi
     Institute of Information Sciences and Electronics
     University of Tsukuba
     1-1-1 Tennodai, Tsukuba, Ibaraki 305-8573, Japan
