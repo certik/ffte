@@ -1,20 +1,18 @@
 F77 = g77
 FFLAGS = -O3 -fomit-frame-pointer -I..
-LDFLAGS =
 #F77 = ifort
-#FFLAGS = -O3 -xW -fno-alias -I..
-#LDFLAGS = -Vaxlib
+#FFLAGS = -O3 -xW -I..
 
 all: test1d test2d test3d speed1d speed2d speed3d
 
 test1d : test1d.o zfft1d.o fft235.o kernel.o
-	$(F77) $(FFLAGS) test1d.o zfft1d.o fft235.o kernel.o -o test1d $(LDFLAGS)
+	$(F77) $(FFLAGS) test1d.o zfft1d.o fft235.o kernel.o -o test1d
 
 test2d : test2d.o zfft2d.o fft235.o kernel.o
-	$(F77) $(FFLAGS) test2d.o zfft2d.o fft235.o kernel.o -o test2d $(LDFLAGS)
+	$(F77) $(FFLAGS) test2d.o zfft2d.o fft235.o kernel.o -o test2d
 
 test3d : test3d.o zfft3d.o fft235.o kernel.o
-	$(F77) $(FFLAGS) test3d.o zfft3d.o fft235.o kernel.o -o test3d $(LDFLAGS)
+	$(F77) $(FFLAGS) test3d.o zfft3d.o fft235.o kernel.o -o test3d
 
 test1d.o : test1d.f ../param.h
 	$(F77) $(FFLAGS) -c test1d.f -o test1d.o
@@ -26,13 +24,13 @@ test3d.o : test3d.f ../param.h
 	$(F77) $(FFLAGS) -c test3d.f -o test3d.o
 
 speed1d : speed1d.o zfft1d.o fft235.o kernel.o
-	$(F77) $(FFLAGS) speed1d.o zfft1d.o fft235.o kernel.o -o speed1d $(LDFLAGS)
+	$(F77) $(FFLAGS) speed1d.o zfft1d.o fft235.o kernel.o -o speed1d
 
 speed2d : speed2d.o zfft2d.o fft235.o kernel.o
-	$(F77) $(FFLAGS) speed2d.o zfft2d.o fft235.o kernel.o -o speed2d $(LDFLAGS)
+	$(F77) $(FFLAGS) speed2d.o zfft2d.o fft235.o kernel.o -o speed2d
 
 speed3d : speed3d.o zfft3d.o fft235.o kernel.o
-	$(F77) $(FFLAGS) speed3d.o zfft3d.o fft235.o kernel.o -o speed3d $(LDFLAGS)
+	$(F77) $(FFLAGS) speed3d.o zfft3d.o fft235.o kernel.o -o speed3d
 
 speed1d.o : speed1d.f ../param.h
 	$(F77) $(FFLAGS) -c speed1d.f -o speed1d.o

@@ -1,7 +1,7 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
 C         GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
@@ -35,15 +35,15 @@ C
       END
       SUBROUTINE FFT3A(A,B,W,L)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION A(2,L,*),B(2,3,*),W(2,*)
+      DIMENSION A(2,L,*),B(2,3,*),W(2,2,*)
       DATA C31/0.86602540378443865D0/C32/0.5D0/
 C
 !DIR$ VECTOR ALIGNED
       DO 10 J=1,L
-        WR1=W(1,J)
-        WI1=W(2,J)
-        WR2=WR1*WR1-WI1*WI1
-        WI2=WR1*WI1+WR1*WI1
+        WR1=W(1,1,J)
+        WI1=W(2,1,J)
+        WR2=W(1,2,J)
+        WI2=W(2,2,J)
         X0=A(1,J,2)+A(1,J,3)
         Y0=A(2,J,2)+A(2,J,3)
         X1=A(1,J,1)-C32*X0
@@ -61,7 +61,7 @@ C
       END
       SUBROUTINE FFT3B(A,B,W,M,L)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION A(2,M,L,*),B(2,M,3,*),W(2,*)
+      DIMENSION A(2,M,L,*),B(2,M,3,*),W(2,2,*)
       DATA C31/0.86602540378443865D0/C32/0.5D0/
 C
 !DIR$ VECTOR ALIGNED
@@ -80,10 +80,10 @@ C
         B(2,I,3,1)=Y1-Y2
    10 CONTINUE
       DO 30 J=2,L
-        WR1=W(1,J)
-        WI1=W(2,J)
-        WR2=WR1*WR1-WI1*WI1
-        WI2=WR1*WI1+WR1*WI1
+        WR1=W(1,1,J)
+        WI1=W(2,1,J)
+        WR2=W(1,2,J)
+        WI2=W(2,2,J)
 !DIR$ VECTOR ALIGNED
         DO 20 I=1,M
           X0=A(1,I,J,2)+A(1,I,J,3)
@@ -104,16 +104,16 @@ C
       END
       SUBROUTINE FFT4A(A,B,W,L)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION A(2,L,*),B(2,4,*),W(2,*)
+      DIMENSION A(2,L,*),B(2,4,*),W(2,3,*)
 C
 !DIR$ VECTOR ALIGNED
       DO 10 J=1,L
-        WR1=W(1,J)
-        WI1=W(2,J)
-        WR2=WR1*WR1-WI1*WI1
-        WI2=WR1*WI1+WR1*WI1
-        WR3=WR1*WR2-WI1*WI2
-        WI3=WR1*WI2+WI1*WR2
+        WR1=W(1,1,J)
+        WI1=W(2,1,J)
+        WR2=W(1,2,J)
+        WI2=W(2,2,J)
+        WR3=W(1,3,J)
+        WI3=W(2,3,J)
         X0=A(1,J,1)+A(1,J,3)
         Y0=A(2,J,1)+A(2,J,3)
         X1=A(1,J,1)-A(1,J,3)
@@ -135,7 +135,7 @@ C
       END
       SUBROUTINE FFT4B(A,B,W,M,L)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION A(2,M,L,*),B(2,M,4,*),W(2,*)
+      DIMENSION A(2,M,L,*),B(2,M,4,*),W(2,3,*)
 C
 !DIR$ VECTOR ALIGNED
       DO 10 I=1,M
@@ -157,12 +157,12 @@ C
         B(2,I,4,1)=Y1-Y3
    10 CONTINUE
       DO 30 J=2,L
-        WR1=W(1,J)
-        WI1=W(2,J)
-        WR2=WR1*WR1-WI1*WI1
-        WI2=WR1*WI1+WR1*WI1
-        WR3=WR1*WR2-WI1*WI2
-        WI3=WR1*WI2+WI1*WR2
+        WR1=W(1,1,J)
+        WI1=W(2,1,J)
+        WR2=W(1,2,J)
+        WI2=W(2,2,J)
+        WR3=W(1,3,J)
+        WI3=W(2,3,J)
 !DIR$ VECTOR ALIGNED
         DO 20 I=1,M
           X0=A(1,I,J,1)+A(1,I,J,3)
@@ -187,20 +187,20 @@ C
       END
       SUBROUTINE FFT5A(A,B,W,L)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION A(2,L,*),B(2,5,*),W(2,*)
+      DIMENSION A(2,L,*),B(2,5,*),W(2,4,*)
       DATA C51/0.95105651629515357D0/C52/0.61803398874989485D0/
      1     C53/0.55901699437494742D0/C54/0.25D0/
 C
 !DIR$ VECTOR ALIGNED
       DO 10 J=1,L
-        WR1=W(1,J)
-        WI1=W(2,J)
-        WR2=WR1*WR1-WI1*WI1
-        WI2=WR1*WI1+WR1*WI1
-        WR3=WR1*WR2-WI1*WI2
-        WI3=WR1*WI2+WI1*WR2
-        WR4=WR2*WR2-WI2*WI2
-        WI4=WR2*WI2+WR2*WI2
+        WR1=W(1,1,J)
+        WI1=W(2,1,J)
+        WR2=W(1,2,J)
+        WI2=W(2,2,J)
+        WR3=W(1,3,J)
+        WI3=W(2,3,J)
+        WR4=W(1,4,J)
+        WI4=W(2,4,J)
         X0=A(1,J,2)+A(1,J,5)
         Y0=A(2,J,2)+A(2,J,5)
         X1=A(1,J,3)+A(1,J,4)
@@ -238,7 +238,7 @@ C
       END
       SUBROUTINE FFT5B(A,B,W,M,L)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION A(2,M,L,*),B(2,M,5,*),W(2,*)
+      DIMENSION A(2,M,L,*),B(2,M,5,*),W(2,4,*)
       DATA C51/0.95105651629515357D0/C52/0.61803398874989485D0/
      1     C53/0.55901699437494742D0/C54/0.25D0/
 C
@@ -278,14 +278,14 @@ C
         B(2,I,5,1)=Y7-Y9
    10 CONTINUE
       DO 30 J=2,L
-        WR1=W(1,J)
-        WI1=W(2,J)
-        WR2=WR1*WR1-WI1*WI1
-        WI2=WR1*WI1+WR1*WI1
-        WR3=WR1*WR2-WI1*WI2
-        WI3=WR1*WI2+WI1*WR2
-        WR4=WR2*WR2-WI2*WI2
-        WI4=WR2*WI2+WR2*WI2
+        WR1=W(1,1,J)
+        WI1=W(2,1,J)
+        WR2=W(1,2,J)
+        WI2=W(2,2,J)
+        WR3=W(1,3,J)
+        WI3=W(2,3,J)
+        WR4=W(1,4,J)
+        WI4=W(2,4,J)
 !DIR$ VECTOR ALIGNED
         DO 20 I=1,M
           X0=A(1,I,J,2)+A(1,I,J,5)
@@ -326,25 +326,25 @@ C
       END
       SUBROUTINE FFT8A(A,B,W,L)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION A(2,L,*),B(2,8,*),W(2,*)
+      DIMENSION A(2,L,*),B(2,8,*),W(2,7,*)
       DATA C81/0.70710678118654752D0/
 C
 !DIR$ VECTOR ALIGNED
       DO 10 J=1,L
-        WR1=W(1,J)
-        WI1=W(2,J)
-        WR2=WR1*WR1-WI1*WI1
-        WI2=WR1*WI1+WR1*WI1
-        WR3=WR1*WR2-WI1*WI2
-        WI3=WR1*WI2+WI1*WR2
-        WR4=WR2*WR2-WI2*WI2
-        WI4=WR2*WI2+WR2*WI2
-        WR5=WR2*WR3-WI2*WI3
-        WI5=WR2*WI3+WI2*WR3
-        WR6=WR3*WR3-WI3*WI3
-        WI6=WR3*WI3+WR3*WI3
-        WR7=WR3*WR4-WI3*WI4
-        WI7=WR3*WI4+WI3*WR4
+        WR1=W(1,1,J)
+        WI1=W(2,1,J)
+        WR2=W(1,2,J)
+        WI2=W(2,2,J)
+        WR3=W(1,3,J)
+        WI3=W(2,3,J)
+        WR4=W(1,4,J)
+        WI4=W(2,4,J)
+        WR5=W(1,5,J)
+        WI5=W(2,5,J)
+        WR6=W(1,6,J)
+        WI6=W(2,6,J)
+        WR7=W(1,7,J)
+        WI7=W(2,7,J)
         X0=A(1,J,1)+A(1,J,5)
         Y0=A(2,J,1)+A(2,J,5)
         X1=A(1,J,1)-A(1,J,5)
@@ -398,7 +398,7 @@ C
       END
       SUBROUTINE FFT8B(A,B,W,M,L)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION A(2,M,L,*),B(2,M,8,*),W(2,*)
+      DIMENSION A(2,M,L,*),B(2,M,8,*),W(2,7,*)
       DATA C81/0.70710678118654752D0/
 C
 !DIR$ VECTOR ALIGNED
@@ -453,20 +453,20 @@ C
         B(2,I,8,1)=V0-V2
    10 CONTINUE
       DO 30 J=2,L
-        WR1=W(1,J)
-        WI1=W(2,J)
-        WR2=WR1*WR1-WI1*WI1
-        WI2=WR1*WI1+WR1*WI1
-        WR3=WR1*WR2-WI1*WI2
-        WI3=WR1*WI2+WI1*WR2
-        WR4=WR2*WR2-WI2*WI2
-        WI4=WR2*WI2+WR2*WI2
-        WR5=WR2*WR3-WI2*WI3
-        WI5=WR2*WI3+WI2*WR3
-        WR6=WR3*WR3-WI3*WI3
-        WI6=WR3*WI3+WR3*WI3
-        WR7=WR3*WR4-WI3*WI4
-        WI7=WR3*WI4+WI3*WR4
+        WR1=W(1,1,J)
+        WI1=W(2,1,J)
+        WR2=W(1,2,J)
+        WI2=W(2,2,J)
+        WR3=W(1,3,J)
+        WI3=W(2,3,J)
+        WR4=W(1,4,J)
+        WI4=W(2,4,J)
+        WR5=W(1,5,J)
+        WI5=W(2,5,J)
+        WR6=W(1,6,J)
+        WI6=W(2,6,J)
+        WR7=W(1,7,J)
+        WI7=W(2,7,J)
 !DIR$ VECTOR ALIGNED
         DO 20 I=1,M
           X0=A(1,I,J,1)+A(1,I,J,5)

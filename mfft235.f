@@ -1,7 +1,7 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
 C         GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
@@ -50,7 +50,7 @@ C
           END IF
         END IF
         M=M*8
-        J=J+L
+        J=J+L*7
    10 CONTINUE
       DO 20 K=1,IP(3)
         L=L/5
@@ -69,7 +69,7 @@ C
           END IF
         END IF
         M=M*5
-        J=J+L
+        J=J+L*4
    20 CONTINUE
       DO 30 K=1,KP4
         L=L/4
@@ -88,7 +88,7 @@ C
           END IF
         END IF
         M=M*4
-        J=J+L
+        J=J+L*3
    30 CONTINUE
       DO 40 K=1,IP(2)
         L=L/3
@@ -107,7 +107,7 @@ C
           END IF
         END IF
         M=M*3
-        J=J+L
+        J=J+L*2
    40 CONTINUE
       IF (IP(1) .EQ. 1) THEN
         IF (KEY .GE. 0) THEN
@@ -152,7 +152,7 @@ C
           END IF
         END IF
         M=M*8
-        J=J+L
+        J=J+L*7
    10 CONTINUE
       DO 20 K=1,IP(3)
         L=L/5
@@ -171,7 +171,7 @@ C
           END IF
         END IF
         M=M*5
-        J=J+L
+        J=J+L*4
    20 CONTINUE
       DO 30 K=1,KP4
         L=L/4
@@ -190,7 +190,7 @@ C
           END IF
         END IF
         M=M*4
-        J=J+L
+        J=J+L*3
    30 CONTINUE
       DO 40 K=1,IP(2)
         L=L/3
@@ -209,7 +209,7 @@ C
           END IF
         END IF
         M=M*3
-        J=J+L
+        J=J+L*2
    40 CONTINUE
       IF (IP(1) .EQ. 1) THEN
         IF (KEY .GE. 0) THEN
@@ -287,78 +287,6 @@ C
         DO 120 I=N1-N2+1,N1-1
           DO 110 J=1,N1-I
             B(J,I+J)=A(I+J,J)
-  110     CONTINUE
-  120   CONTINUE
-      END IF
-      RETURN
-      END
-      SUBROUTINE ZTRANSMUL(A,B,W,N1,N2)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      COMPLEX*16 A(*),B(*),W(*)
-      DIMENSION IP1(3),IP2(3)
-C
-      CALL FACTOR(N1,IP1)
-      CALL FACTOR(N2,IP2)
-C
-      IF (N1 .EQ. 1 .OR. N2 .EQ. 1) THEN
-        DO 10 I=1,N1*N2
-          B(I)=A(I)*W(I)
-   10   CONTINUE
-        RETURN
-      END IF
-C
-      IF (IP1(1)+IP2(1) .LE. 1) THEN
-        CALL ZTRANSMULA(A,B,W,N1,N2)
-      ELSE
-        CALL ZTRANSMULB(A,B,W,N1,N2)
-      END IF
-      RETURN
-      END
-      SUBROUTINE ZTRANSMULA(A,B,W,N1,N2)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      COMPLEX*16 A(N1,*),B(N2,*),W(N2,*)
-C
-      DO 20 I=1,N1
-        DO 10 J=1,N2
-          B(J,I)=A(I,J)*W(J,I)
-   10   CONTINUE
-   20 CONTINUE
-      RETURN
-      END
-      SUBROUTINE ZTRANSMULB(A,B,W,N1,N2)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      COMPLEX*16 A(N1,*),B(N2,*),W(N2,*)
-C
-      IF (N2 .GE. N1) THEN
-        DO 20 I=0,N1-1
-          DO 10 J=1,N1-I
-            B(J,I+J)=A(I+J,J)*W(J,I+J)
-   10     CONTINUE
-   20   CONTINUE
-        DO 40 I=1,N2-N1
-          DO 30 J=1,N1
-            B(I+J,J)=A(J,I+J)*W(I+J,J)
-   30     CONTINUE
-   40   CONTINUE
-        DO 60 I=N2-N1+1,N2-1
-          DO 50 J=1,N2-I
-            B(I+J,J)=A(J,I+J)*W(I+J,J)
-   50     CONTINUE
-   60   CONTINUE
-      ELSE
-        DO 80 I=0,N2-1
-          DO 70 J=1,N2-I
-            B(I+J,J)=A(J,I+J)*W(I+J,J)
-   70     CONTINUE
-   80   CONTINUE
-        DO 100 I=1,N1-N2
-          DO 90 J=1,N2
-            B(J,I+J)=A(I+J,J)*W(J,I+J)
-   90     CONTINUE
-  100   CONTINUE
-        DO 120 I=N1-N2+1,N1-1
-          DO 110 J=1,N1-I
-            B(J,I+J)=A(I+J,J)*W(J,I+J)
   110     CONTINUE
   120   CONTINUE
       END IF

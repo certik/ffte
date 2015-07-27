@@ -1,17 +1,17 @@
 F77 = mpif77
 FFLAGS = -O3 -I../..
-#FFLAGS = -O3 -xW -fno-alias -I../..
+#FFLAGS = -O3 -xW -I../..
 
 all: ptest1d ptest2d ptest3d pspeed1d pspeed2d pspeed3d
 
-ptest1d : ptest1d.o pvzfft1d.o pztrans.o mfft235.o fft235.o kernel.o
-	$(F77) $(FFLAGS) ptest1d.o pvzfft1d.o pztrans.o mfft235.o fft235.o kernel.o -o ptest1d
+ptest1d : ptest1d.o pvzfft1d.o mfft235.o fft235.o kernel.o
+	$(F77) $(FFLAGS) ptest1d.o pvzfft1d.o mfft235.o fft235.o kernel.o -o ptest1d
 
-ptest2d : ptest2d.o pvzfft2d.o pztrans.o mfft235.o fft235.o kernel.o
-	$(F77) $(FFLAGS) ptest2d.o pvzfft2d.o pztrans.o mfft235.o fft235.o kernel.o -o ptest2d
+ptest2d : ptest2d.o pvzfft2d.o mfft235.o fft235.o kernel.o
+	$(F77) $(FFLAGS) ptest2d.o pvzfft2d.o mfft235.o fft235.o kernel.o -o ptest2d
 
-ptest3d : ptest3d.o pvzfft3d.o pztrans.o  mfft235.o fft235.o kernel.o
-	$(F77) $(FFLAGS) ptest3d.o pvzfft3d.o pztrans.o mfft235.o fft235.o kernel.o -o ptest3d
+ptest3d : ptest3d.o pvzfft3d.o  mfft235.o fft235.o kernel.o
+	$(F77) $(FFLAGS) ptest3d.o pvzfft3d.o mfft235.o fft235.o kernel.o -o ptest3d
 
 ptest1d.o : ptest1d.f ../../param.h
 	$(F77) $(FFLAGS) -c ptest1d.f -o ptest1d.o
@@ -22,14 +22,14 @@ ptest2d.o : ptest2d.f ../../param.h
 ptest3d.o : ptest3d.f ../../param.h
 	$(F77) $(FFLAGS) -c ptest3d.f -o ptest3d.o
 
-pspeed1d : pspeed1d.o pvzfft1d.o pztrans.o mfft235.o fft235.o kernel.o
-	$(F77) $(FFLAGS) pspeed1d.o pvzfft1d.o pztrans.o mfft235.o fft235.o kernel.o -o pspeed1d
+pspeed1d : pspeed1d.o pvzfft1d.o mfft235.o fft235.o kernel.o
+	$(F77) $(FFLAGS) pspeed1d.o pvzfft1d.o mfft235.o fft235.o kernel.o -o pspeed1d
 
-pspeed2d : pspeed2d.o pvzfft2d.o pztrans.o mfft235.o fft235.o kernel.o
-	$(F77) $(FFLAGS) pspeed2d.o pvzfft2d.o pztrans.o mfft235.o fft235.o kernel.o -o pspeed2d
+pspeed2d : pspeed2d.o pvzfft2d.o mfft235.o fft235.o kernel.o
+	$(F77) $(FFLAGS) pspeed2d.o pvzfft2d.o mfft235.o fft235.o kernel.o -o pspeed2d
 
-pspeed3d : pspeed3d.o pvzfft3d.o pztrans.o fft235.o kernel.o mfft235.o
-	$(F77) $(FFLAGS) pspeed3d.o pvzfft3d.o pztrans.o mfft235.o fft235.o kernel.o -o pspeed3d
+pspeed3d : pspeed3d.o pvzfft3d.o fft235.o kernel.o mfft235.o
+	$(F77) $(FFLAGS) pspeed3d.o pvzfft3d.o mfft235.o fft235.o kernel.o -o pspeed3d
 
 pspeed1d.o : pspeed1d.f ../../param.h
 	$(F77) $(FFLAGS) -c pspeed1d.f -o pspeed1d.o
@@ -48,9 +48,6 @@ pvzfft2d.o : ../pvzfft2d.f ../../param.h
 
 pvzfft3d.o : ../pvzfft3d.f ../../param.h
 	$(F77) $(FFLAGS) -c ../pvzfft3d.f -o pvzfft3d.o
-
-pztrans.o : ../pztrans.f
-	$(F77) $(FFLAGS) -c ../pztrans.f -o pztrans.o
 
 mfft235.o : ../../mfft235.f
 	$(F77) $(FFLAGS) -c ../../mfft235.f -o mfft235.o

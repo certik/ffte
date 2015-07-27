@@ -1,7 +1,7 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
 C         GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
@@ -50,7 +50,7 @@ C
           END IF
         END IF
         M=M*8
-        J=J+L
+        J=J+L*7
    10 CONTINUE
       DO 20 K=1,IP(3)
         L=L/5
@@ -69,7 +69,7 @@ C
           END IF
         END IF
         M=M*5
-        J=J+L
+        J=J+L*4
    20 CONTINUE
       DO 30 K=1,KP4
         L=L/4
@@ -88,7 +88,7 @@ C
           END IF
         END IF
         M=M*4
-        J=J+L
+        J=J+L*3
    30 CONTINUE
       DO 40 K=1,IP(2)
         L=L/3
@@ -107,7 +107,7 @@ C
           END IF
         END IF
         M=M*3
-        J=J+L
+        J=J+L*2
    40 CONTINUE
       IF (IP(1) .EQ. 1) THEN
         IF (KEY .GE. 0) THEN
@@ -182,53 +182,37 @@ C
       DO 10 K=1,KP8
         L=L/8
         CALL SETTBL0(W(J),8,L)
-        J=J+L
+        J=J+L*7
    10 CONTINUE
       DO 20 K=1,IP(3)
         L=L/5
         CALL SETTBL0(W(J),5,L)
-        J=J+L
+        J=J+L*4
    20 CONTINUE
       DO 30 K=1,KP4
         L=L/4
         CALL SETTBL0(W(J),4,L)
-        J=J+L
+        J=J+L*3
    30 CONTINUE
       DO 40 K=1,IP(2)
         L=L/3
         CALL SETTBL0(W(J),3,L)
-        J=J+L
+        J=J+L*2
    40 CONTINUE
       RETURN
       END
       SUBROUTINE SETTBL0(W,M,L)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION W(2,*)
+      DIMENSION W(2,M-1,*)
 C
       PI2=8.0D0*DATAN(1.0D0)
       PX=-PI2/(DBLE(M)*DBLE(L))
-!DIR$ VECTOR ALIGNED
-      DO 10 I=1,L
-        W(1,I)=DCOS(PX*DBLE(I-1))
-        W(2,I)=DSIN(PX*DBLE(I-1))
-   10 CONTINUE
-      RETURN
-      END
-      SUBROUTINE SETTBL2(W,N1,N2)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION W(2,N1,*)
-C
-      PI2=8.0D0*DATAN(1.0D0)
-      PX=-PI2/(DBLE(N1)*DBLE(N2))
-!$OMP PARALLEL DO
-      DO 20 K=1,N2
-!DIR$ VECTOR ALIGNED
-        DO 10 J=1,N1
-          W(1,J,K)=DCOS(PX*DBLE(J-1)*DBLE(K-1))
-          W(2,J,K)=DSIN(PX*DBLE(J-1)*DBLE(K-1))
+      DO 20 J=1,L
+        DO 10 I=1,M-1
+          W(1,I,J)=DCOS(PX*DBLE(I)*DBLE(J-1))
+          W(2,I,J)=DSIN(PX*DBLE(I)*DBLE(J-1))
    10   CONTINUE
    20 CONTINUE
-!$OMP END PARALLEL DO
       RETURN
       END
       SUBROUTINE FACTOR(N,IP)

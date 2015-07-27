@@ -1,7 +1,7 @@
 /*
       FFTE: A FAST FOURIER TRANSFORM PACKAGE
 
-      (C) COPYRIGHT SOFTWARE, 2000-2004, ALL RIGHTS RESERVED
+      (C) COPYRIGHT SOFTWARE, 2000-2004, 2008, ALL RIGHTS RESERVED
                  BY
           DAISUKE TAKAHASHI
           GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
@@ -18,8 +18,6 @@
 */
 
 #include <pmmintrin.h>
-
-__m128d ZMUL(__m128d a, __m128d b);
 
 static __inline __m128d ZMUL(__m128d a, __m128d b)
 {
@@ -65,11 +63,11 @@ int fft3a_(double *a, double *b, double *w, int *l)
     static double c32 = .5; */
     static __m128d c31, c32;
 
-    int j, j0, j1, j2, j3, j4, j5;
+    int j, j0, j1, j2, j3, j4, j5, j6;
     /* double x0, y0, x1, y1, x2, y2, wi1, wi2, wr1, wr2; */
     __m128d t0, t1, t2, t3, w1, w2;
 
-    c31 = _mm_set1_pd(0.86602540378443865);
+    c31 = _mm_set_pd(-0.86602540378443865, 0.86602540378443865);
     c32 = _mm_set1_pd(0.5);
 
     for (j = 0; j < *l; j++) {
@@ -79,12 +77,13 @@ int fft3a_(double *a, double *b, double *w, int *l)
 	j3 = j * 6;
 	j4 = j3 + 2;
 	j5 = j4 + 2;
-	/* wr1 = w[j0];
-	wi1 = w[j0 + 1];
-	wr2 = wr1 * wr1 - wi1 * wi1;
-	wi2 = wr1 * wi1 + wr1 * wi1; */
-	w1 = _mm_load_pd(&w[j0]);
-	w2 = ZMUL(w1, w1);
+	j6 = j << 2;
+	/* wr1 = w[j6];
+	wi1 = w[j6 + 1];
+	wr2 = w[j6 + 2];
+	wi2 = w[j6 + 3]; */
+	w1 = _mm_load_pd(&w[j6]);
+	w2 = _mm_load_pd(&w[j6 + 2]);
 	/* x0 = a[j1] + a[j2];
 	y0 = a[j1 + 1] + a[j2 + 1];
 	x1 = a[j0] - c32 * x0;
@@ -94,7 +93,7 @@ int fft3a_(double *a, double *b, double *w, int *l)
 	t1 = _mm_load_pd(&a[j1]);
 	t2 = _mm_load_pd(&a[j2]);
 	t0 = _mm_add_pd(t1, t2);
-	t2 = _mm_xor_pd(_mm_sub_pd(t1, t2), _mm_set_sd(-0.0));
+	t2 = _mm_sub_pd(t1, t2);
 	t2 = _mm_mul_pd(c31, _mm_shuffle_pd(t2, t2, 1));
 	t3 = _mm_load_pd(&a[j0]);
 	t1 = _mm_sub_pd(t3, _mm_mul_pd(c32, t0));
@@ -121,7 +120,7 @@ int fft3b_(double *a, double *b, double *w, int *m, int *l)
     /* double x0, y0, x1, y1, x2, y2, wi1, wi2, wr1, wr2; */
     __m128d t0, t1, t2, t3, w1, w2;
 
-    c31 = _mm_set1_pd(0.86602540378443865);
+    c31 = _mm_set_pd(-0.86602540378443865, 0.86602540378443865);
     c32 = _mm_set1_pd(0.5);
 
     for (i = 0; i < *m; i++) {
@@ -140,7 +139,7 @@ int fft3b_(double *a, double *b, double *w, int *m, int *l)
 	t1 = _mm_load_pd(&a[i1]);
 	t2 = _mm_load_pd(&a[i2]);
 	t0 = _mm_add_pd(t1, t2);
-	t2 = _mm_xor_pd(_mm_sub_pd(t1, t2), _mm_set_sd(-0.0));
+	t2 = _mm_sub_pd(t1, t2);
 	t2 = _mm_mul_pd(c31, _mm_shuffle_pd(t2, t2, 1));
 	t3 = _mm_load_pd(&a[i0]);
 	t1 = _mm_sub_pd(t3, _mm_mul_pd(c32, t0));
@@ -155,13 +154,13 @@ int fft3b_(double *a, double *b, double *w, int *m, int *l)
 	_mm_store_pd(&b[i5], _mm_sub_pd(t1, t2));
     }
     for (j = 1; j < *l; j++) {
-        j0 = j << 1;
+        j0 = j << 2;
 	/* wr1 = w[j0];
 	wi1 = w[j0 + 1];
-	wr2 = wr1 * wr1 - wi1 * wi1;
-	wi2 = wr1 * wi1 + wr1 * wi1; */
+	wr2 = w[j0 + 2];
+	wi2 = w[j0 + 3]; */
 	w1 = _mm_load_pd(&w[j0]);
-	w2 = ZMUL(w1, w1);
+	w2 = _mm_load_pd(&w[j0 + 2]);
 	for (i = 0; i < *m; i++) {
 	    i0 = (i << 1) + (j * *m << 1);
 	    i1 = i0 + (*m * *l << 1);
@@ -178,7 +177,7 @@ int fft3b_(double *a, double *b, double *w, int *m, int *l)
 	    t1 = _mm_load_pd(&a[i1]);
 	    t2 = _mm_load_pd(&a[i2]);
 	    t0 = _mm_add_pd(t1, t2);
-	    t2 = _mm_xor_pd(_mm_sub_pd(t1, t2), _mm_set_sd(-0.0));
+	    t2 = _mm_sub_pd(t1, t2);
 	    t2 = _mm_mul_pd(c31, _mm_shuffle_pd(t2, t2, 1));
 	    t3 = _mm_load_pd(&a[i0]);
 	    t1 = _mm_sub_pd(t3, _mm_mul_pd(c32, t0));
@@ -198,7 +197,7 @@ int fft3b_(double *a, double *b, double *w, int *m, int *l)
 
 int fft4a_(double *a, double *b, double *w, int *l)
 {
-    int j, j0, j1, j2, j3, j4, j5, j6, j7;
+    int j, j0, j1, j2, j3, j4, j5, j6, j7, j8;
     /* double x0, y0, x1, y1, x2, y2, x3, y3, wi1, wi2, wi3, wr1, wr2, wr3; */
     __m128d t0, t1, t2, t3, t4, w1, w2, w3;
 
@@ -211,15 +210,16 @@ int fft4a_(double *a, double *b, double *w, int *l)
 	j5 = j4 + 2;
 	j6 = j5 + 2;
 	j7 = j6 + 2;
-	/* wr1 = w[j0];
-	wi1 = w[j0 + 1];
-	wr2 = wr1 * wr1 - wi1 * wi1;
-	wi2 = wr1 * wi1 + wr1 * wi1;
-	wr3 = wr1 * wr2 - wi1 * wi2;
-	wi3 = wr1 * wi2 + wi1 * wr2; */
-	w1 = _mm_load_pd(&w[j0]);
-	w2 = ZMUL(w1, w1);
-	w3 = ZMUL(w1, w2);
+	j8 = j * 6;
+	/* wr1 = w[j8];
+	wi1 = w[j8 + 1];
+	wr2 = w[j8 + 2];
+	wi2 = w[j8 + 3];
+	wr3 = w[j8 + 4];
+	wi3 = w[j8 + 5]; */
+	w1 = _mm_load_pd(&w[j8]);
+	w2 = _mm_load_pd(&w[j8 + 2]);
+	w3 = _mm_load_pd(&w[j8 + 4]);
 	/* x0 = a[j0] + a[j2];
 	y0 = a[j0 + 1] + a[j2 + 1];
 	x1 = a[j0] - a[j2];
@@ -299,16 +299,16 @@ int fft4b_(double *a, double *b, double *w, int *m, int *l)
 	_mm_store_pd(&b[i7], _mm_sub_pd(t1, t3));
     }
     for (j = 1; j < *l; j++) {
-	j0 = j << 1;
+	j0 = j * 6;
 	/* wr1 = w[j0];
 	wi1 = w[j0 + 1];
-	wr2 = wr1 * wr1 - wi1 * wi1;
-	wi2 = wr1 * wi1 + wr1 * wi1;
-	wr3 = wr1 * wr2 - wi1 * wi2;
-	wi3 = wr1 * wi2 + wi1 * wr2; */
+	wr2 = w[j0 + 2];
+	wi2 = w[j0 + 3];
+	wr3 = w[j0 + 4];
+	wi3 = w[j0 + 5]; */
 	w1 = _mm_load_pd(&w[j0]);
-	w2 = ZMUL(w1, w1);
-	w3 = ZMUL(w1, w2);
+	w2 = _mm_load_pd(&w[j0 + 2]);
+	w3 = _mm_load_pd(&w[j0 + 4]);
 	for (i = 0; i < *m; i++) {
 	    i0 = (i << 1) + (j * *m << 1);
 	    i1 = i0 + (*m * *l << 1);
@@ -360,7 +360,7 @@ int fft5a_(double *a, double *b, double *w, int *l)
     static double c54 = .25; */
     static __m128d c51, c52, c53, c54;
 
-    int j, j0, j1, j2, j3, j4, j5, j6, j7, j8, j9;
+    int j, j0, j1, j2, j3, j4, j5, j6, j7, j8, j9, j10;
     /* double x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5, x6, y6, x7, y7,
                 x8, y8, x9, y9, x10, y10, wi1, wi2, wi3, wi4, wr1, wr2, wr3, wr4; */
     __m128d t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, w1, w2, w3, w4;
@@ -381,18 +381,19 @@ int fft5a_(double *a, double *b, double *w, int *l)
 	j7 = j6 + 2;
 	j8 = j7 + 2;
 	j9 = j8 + 2;
-	/* wr1 = w[j0];
-	wi1 = w[j0 + 1];
-	wr2 = wr1 * wr1 - wi1 * wi1;
-	wi2 = wr1 * wi1 + wr1 * wi1;
-	wr3 = wr1 * wr2 - wi1 * wi2;
-	wi3 = wr1 * wi2 + wi1 * wr2;
-	wr4 = wr2 * wr2 - wi2 * wi2;
-	wi4 = wr2 * wi2 + wr2 * wi2; */
-	w1 = _mm_load_pd(&w[j0]);
-	w2 = ZMUL(w1, w1);
-	w3 = ZMUL(w1, w2);
-	w4 = ZMUL(w2, w2);
+	j10 = j << 3;
+	/* wr1 = w[j10];
+	wi1 = w[j10 + 1];
+	wr2 = w[j10 + 2];
+	wi2 = w[j10 + 3];
+	wr3 = w[j10 + 4];
+	wi3 = w[j10 + 5];
+	wr4 = w[j10 + 6];
+	wi4 = w[j10 + 7]; */
+	w1 = _mm_load_pd(&w[j10]);
+	w2 = _mm_load_pd(&w[j10 + 2]);
+	w3 = _mm_load_pd(&w[j10 + 4]);
+	w4 = _mm_load_pd(&w[j10 + 6]);
 	/* x0 = a[j1] + a[j4];
 	y0 = a[j1 + 1] + a[j4 + 1];
 	x1 = a[j2] + a[j3];
@@ -538,19 +539,19 @@ int fft5b_(double *a, double *b, double *w, int *m, int *l)
 	_mm_store_pd(&b[i9], _mm_sub_pd(t7, t9));
     }
     for (j = 1; j < *l; j++) {
-        j0 = j << 1;
+        j0 = j << 3;
 	/* wr1 = w[j0];
 	wi1 = w[j0 + 1];
-	wr2 = wr1 * wr1 - wi1 * wi1;
-	wi2 = wr1 * wi1 + wr1 * wi1;
-	wr3 = wr1 * wr2 - wi1 * wi2;
-	wi3 = wr1 * wi2 + wi1 * wr2;
-	wr4 = wr2 * wr2 - wi2 * wi2;
-	wi4 = wr2 * wi2 + wr2 * wi2; */
+	wr2 = w[j0 + 2];
+	wi2 = w[j0 + 3];
+	wr3 = w[j0 + 4];
+	wi3 = w[j0 + 5];
+	wr4 = w[j0 + 6];
+	wi4 = w[j0 + 7]; */
 	w1 = _mm_load_pd(&w[j0]);
-	w2 = ZMUL(w1, w1);
-	w3 = ZMUL(w1, w2);
-	w4 = ZMUL(w2, w2);
+	w2 = _mm_load_pd(&w[j0 + 2]);
+	w3 = _mm_load_pd(&w[j0 + 4]);
+	w4 = _mm_load_pd(&w[j0 + 6]);
 	for (i = 0; i < *m; i++) {
 	    i0 = (i << 1) + (j * *m << 1);
 	    i1 = i0 + (*m * *l << 1);
@@ -627,7 +628,7 @@ int fft8a_(double *a, double *b, double *w, int *l)
     /* static double c81 = .70710678118654752; */
     static __m128d c81;
 
-    int j, j0, j1, j2, j3, j4, j5, j6, j7, j8, j9, j10, j11, j12, j13, j14, j15;
+    int j, j0, j1, j2, j3, j4, j5, j6, j7, j8, j9, j10, j11, j12, j13, j14, j15, j16;
     /* double u0, v0, u1, x0, y0, x1, y1, x2, y2, x3, y3, v1, x4, y4, x5, y5,
              x6, y6, x7, y7, u2, v2, u3, v3, wi1, wi2, wi3, wi4, wi5, wi6,
              wi7, wr1, wr2, wr3, wr4, wr5, wr6, wr7; */
@@ -652,27 +653,28 @@ int fft8a_(double *a, double *b, double *w, int *l)
         j13 = j12 + 2;
         j14 = j13 + 2;
         j15 = j14 + 2;
-	/* wr1 = w[j0];
-	wi1 = w[j0 + 1];
-	wr2 = wr1 * wr1 - wi1 * wi1;
-	wi2 = wr1 * wi1 + wr1 * wi1;
-	wr3 = wr1 * wr2 - wi1 * wi2;
-	wi3 = wr1 * wi2 + wi1 * wr2;
-	wr4 = wr2 * wr2 - wi2 * wi2;
-	wi4 = wr2 * wi2 + wr2 * wi2;
-	wr5 = wr2 * wr3 - wi2 * wi3;
-	wi5 = wr2 * wi3 + wi2 * wr3;
-	wr6 = wr3 * wr3 - wi3 * wi3;
-	wi6 = wr3 * wi3 + wr3 * wi3;
-	wr7 = wr3 * wr4 - wi3 * wi4;
-	wi7 = wr3 * wi4 + wi3 * wr4; */
-	w1 = _mm_load_pd(&w[j0]);
-	w2 = ZMUL(w1, w1);
-	w3 = ZMUL(w1, w2);
-	w4 = ZMUL(w2, w2);
-	w5 = ZMUL(w2, w3);
-	w6 = ZMUL(w3, w3);
-	w7 = ZMUL(w3, w4);
+	j16 = j * 14;
+	/* wr1 = w[j16];
+	wi1 = w[j16 + 1];
+	wr2 = w[j16 + 2];
+	wi2 = w[j16 + 3];
+	wr3 = w[j16 + 4];
+	wi3 = w[j16 + 5];
+	wr4 = w[j16 + 6];
+	wi4 = w[j16 + 7];
+	wr5 = w[j16 + 8];
+	wi5 = w[j16 + 9];
+	wr6 = w[j16 + 10];
+	wi6 = w[j16 + 11];
+	wr7 = w[j16 + 12];
+	wi7 = w[j16 + 13]; */
+	w1 = _mm_load_pd(&w[j16]);
+	w2 = _mm_load_pd(&w[j16 + 2]);
+	w3 = _mm_load_pd(&w[j16 + 4]);
+	w4 = _mm_load_pd(&w[j16 + 6]);
+	w5 = _mm_load_pd(&w[j16 + 8]);
+	w6 = _mm_load_pd(&w[j16 + 10]);
+	w7 = _mm_load_pd(&w[j16 + 12]);
 	/* x0 = a[j0] + a[j4];
 	y0 = a[j0 + 1] + a[j4 + 1];
 	x1 = a[j0] - a[j4];
@@ -879,28 +881,28 @@ int fft8b_(double *a, double *b, double *w, int *m, int *l)
 	_mm_store_pd(&b[i15], _mm_sub_pd(u0, u2));
     }
     for (j = 1; j < *l; j++) {
-        j0 = j << 1;
+        j0 = j * 14;
 	/* wr1 = w[j0];
 	wi1 = w[j0 + 1];
-	wr2 = wr1 * wr1 - wi1 * wi1;
-	wi2 = wr1 * wi1 + wr1 * wi1;
-	wr3 = wr1 * wr2 - wi1 * wi2;
-	wi3 = wr1 * wi2 + wi1 * wr2;
-	wr4 = wr2 * wr2 - wi2 * wi2;
-	wi4 = wr2 * wi2 + wr2 * wi2;
-	wr5 = wr2 * wr3 - wi2 * wi3;
-	wi5 = wr2 * wi3 + wi2 * wr3;
-	wr6 = wr3 * wr3 - wi3 * wi3;
-	wi6 = wr3 * wi3 + wr3 * wi3;
-	wr7 = wr3 * wr4 - wi3 * wi4;
-	wi7 = wr3 * wi4 + wi3 * wr4; */
+	wr2 = w[j0 + 2];
+	wi2 = w[j0 + 3];
+	wr3 = w[j0 + 4];
+	wi3 = w[j0 + 5];
+	wr4 = w[j0 + 6];
+	wi4 = w[j0 + 7];
+	wr5 = w[j0 + 8];
+	wi5 = w[j0 + 9];
+	wr6 = w[j0 + 10];
+	wi6 = w[j0 + 11];
+	wr7 = w[j0 + 12];
+	wi7 = w[j0 + 13]; */
 	w1 = _mm_load_pd(&w[j0]);
-	w2 = ZMUL(w1, w1);
-	w3 = ZMUL(w1, w2);
-	w4 = ZMUL(w2, w2);
-	w5 = ZMUL(w2, w3);
-	w6 = ZMUL(w3, w3);
-	w7 = ZMUL(w3, w4);
+	w2 = _mm_load_pd(&w[j0 + 2]);
+	w3 = _mm_load_pd(&w[j0 + 4]);
+	w4 = _mm_load_pd(&w[j0 + 6]);
+	w5 = _mm_load_pd(&w[j0 + 8]);
+	w6 = _mm_load_pd(&w[j0 + 10]);
+	w7 = _mm_load_pd(&w[j0 + 12]);
 	for (i = 0; i < *m; i++) {
 	    i0 = (i << 1) + (j * *m << 1);
 	    i1 = i0 + (*m * *l << 1);
