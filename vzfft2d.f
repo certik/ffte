@@ -10,9 +10,9 @@ C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
 C
 C
-C     2-D COMPLEX FFT ROUTINE
+C     2-D COMPLEX FFT ROUTINE (FOR VECTOR MACHINES)
 C
-C     FORTRAN77 SOURCE PROGRAM
+C     FORTRAN90 SOURCE PROGRAM
 C
 C     CALL ZFFT2D(A,NX,NY,IOPT)
 C
@@ -33,8 +33,9 @@ C
       IMPLICIT REAL*8 (A-H,O-Z)
       INCLUDE 'param.h'
       COMPLEX*16 A(*)
-      COMPLEX*16 B((NDA2+NP)*(NBLK+1)+NP)
       COMPLEX*16 WX(NDA2/2+NP),WY(NDA2/2+NP)
+      COMPLEX*16 B(:)
+      ALLOCATABLE :: B
       DIMENSION LNX(3),LNY(3)
       SAVE WX,WY
 C
@@ -53,10 +54,12 @@ C
    10   CONTINUE
       END IF
 C
-      NC=(NY+NP)*NBLK+NP
-!$OMP PARALLEL PRIVATE(B)
-      CALL ZFFT2D0(A,B,B(NC+1),WX,WY,NX,NY,LNX,LNY)
-!$OMP END PARALLEL
+      ALLOCATE(B(NX*NY))
+      CALL MFFT235A(A,B,WY,NX,NY,LNY)
+      CALL ZTRANS(A,B,NX,NY)
+      CALL MFFT235A(B,A,WX,NY,NX,LNX)
+      CALL ZTRANS(B,A,NY,NX)
+      DEALLOCATE(B)
 C
       IF (IOPT .EQ. 1) THEN
         DN=1.0D0/(DBLE(NX)*DBLE(NY))
@@ -64,36 +67,5 @@ C
           A(I)=DCONJG(A(I))*DN
    20   CONTINUE
       END IF
-      RETURN
-      END
-      SUBROUTINE ZFFT2D0(A,B,C,WX,WY,NX,NY,LNX,LNY)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      INCLUDE 'param.h'
-      COMPLEX*16 A(NX,*),B(NY+NP,*),C(*)
-      COMPLEX*16 WX(*),WY(*)
-      DIMENSION LNX(*),LNY(*)
-C
-!$OMP DO
-      DO 70 II=1,NX,NBLK
-        DO 30 JJ=1,NY,NBLK
-          DO 20 I=II,MIN0(II+NBLK-1,NX)
-            DO 10 J=JJ,MIN0(JJ+NBLK-1,NY)
-              B(J,I-II+1)=A(I,J)
-   10       CONTINUE
-   20     CONTINUE
-   30   CONTINUE
-        DO 40 I=II,MIN0(II+NBLK-1,NX)
-          CALL FFT235(B(1,I-II+1),C,WY,NY,LNY)
-   40   CONTINUE
-        DO 60 J=1,NY
-          DO 50 I=II,MIN0(II+NBLK-1,NX)
-            A(I,J)=B(J,I-II+1)
-   50     CONTINUE
-   60   CONTINUE
-   70 CONTINUE
-!$OMP DO
-      DO 80 J=1,NY
-        CALL FFT235(A(1,J),B,WX,NX,LNX)
-   80 CONTINUE
       RETURN
       END

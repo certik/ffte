@@ -4,21 +4,18 @@ C
 C     (C) COPYRIGHT SOFTWARE, 2000-2004, ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
-C         INSTITURE OF INFORMATION SCIENCES AND ELECTRONICS
+C         GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
 C         UNIVERSITY OF TSUKUBA
 C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
-C         E-MAIL: daisuke@is.tsukuba.ac.jp
+C         E-MAIL: daisuke@cs.tsukuba.ac.jp
 C
 C
-C     3-DIMENSIONAL COMPLEX FFT ROUTINE (MPI VERSION)
+C     PARALLEL 3-D COMPLEX FFT ROUTINE
 C
 C     FORTRAN77 + MPI SOURCE PROGRAM
 C
-C     CALL PZFFT3D(A,B,NX,NY,NZ,ME,NPU,IOPT)
+C     CALL PZFFT3D(A,B,NX,NY,NZ,ICOMM,NPU,IOPT)
 C
-C     A(NX/NPU,NY,NZ) IS COMPLEX INPUT/OUTPUT VECTOR (COMPLEX*16)
-C!HPF$ DISTRIBUTE A(CYCLIC,*,*)
-C     B(NX*NY*NZ/NPU) IS WORK VECTOR (COMPLEX*16)
 C     NX IS THE LENGTH OF THE TRANSFORMS IN THE X-DIRECTION (INTEGER*4)
 C     NY IS THE LENGTH OF THE TRANSFORMS IN THE Y-DIRECTION (INTEGER*4)
 C     NZ IS THE LENGTH OF THE TRANSFORMS IN THE Z-DIRECTION (INTEGER*4)
@@ -27,60 +24,88 @@ C         NX = (2**IP) * (3**IQ) * (5**IR)
 C         NY = (2**JP) * (3**JQ) * (5**JR)
 C         NZ = (2**KP) * (3**KQ) * (5**KR)
 C       ------------------------------------
-C     ME IS PROCESSOR NUMBER (INTEGER*4)
+C     ICOMM IS THE COMMUNICATOR (INTEGER*4)
 C     NPU IS THE NUMBER OF PROCESSORS (INTEGER*4)
-C     IOPT = 1 FOR FORWARD TRANSFORM (INTEGER*4)
-C          = 2 FOR INVERSE TRANSFORM
+C     IOPT = 0 FOR INITIALIZING THE COEFFICIENTS (INTEGER*4)
+C     IOPT = -1 FOR FORWARD TRANSFORM WHERE
+C              A(NX,NY,NZ/NPU) IS COMPLEX INPUT VECTOR (COMPLEX*16)
+C!HPF$ DISTRIBUTE A(*,*,BLOCK)
+C              B(NX,NY,NZ/NPU) IS COMPLEX OUTPUT VECTOR (COMPLEX*16)
+C!HPF$ DISTRIBUTE B(*,*,BLOCK)
+C     IOPT = +1 FOR INVERSE TRANSFORM WHERE
+C              A(NX,NY,NZ/NPU) IS COMPLEX INPUT VECTOR (COMPLEX*16)
+C!HPF$ DISTRIBUTE A(*,*,BLOCK)
+C              B(NX,NY,NZ/NPU) IS COMPLEX OUTPUT VECTOR (COMPLEX*16)
+C!HPF$ DISTRIBUTE B(*,*,BLOCK)
+C     IOPT = -2 FOR FORWARD TRANSFORM WHERE
+C              A(NX,NY,NZ/NPU) IS COMPLEX INPUT VECTOR (COMPLEX*16)
+C!HPF$ DISTRIBUTE A(*,*,BLOCK)
+C              B(NX/NPU,NY,NZ) IS COMPLEX OUTPUT VECTOR (COMPLEX*16)
+C!HPF$ DISTRIBUTE B(BLOCK,*,*)
+C     IOPT = +2 FOR INVERSE TRANSFORM WHERE
+C              A(NX/NPU,NY,NZ) IS COMPLEX INPUT VECTOR (COMPLEX*16)
+C!HPF$ DISTRIBUTE A(BLOCK,*,*)
+C              B(NX,NY,NZ/NPU) IS COMPLEX OUTPUT VECTOR (COMPLEX*16)
+C!HPF$ DISTRIBUTE B(*,*,BLOCK)
 C
 C     WRITTEN BY DAISUKE TAKAHASHI
 C
-      SUBROUTINE PZFFT3D(A,B,NX,NY,NZ,ME,NPU,IOPT)
+      SUBROUTINE PZFFT3D(A,B,NX,NY,NZ,ICOMM,NPU,IOPT)
       IMPLICIT REAL*8 (A-H,O-Z)
       INCLUDE 'param.h'
       COMPLEX*16 A(*),B(*)
-      COMPLEX*16 C((NDA3+NP)*NBLK+NP),D(NDA3+NP)
+      COMPLEX*16 C((NDA3+NP)*(NBLK+1)+NP)
       COMPLEX*16 WX(NDA3/2+NP),WY(NDA3/2+NP),WZ(NDA3/2+NP)
-      DATA NX0,NY0,NZ0/0,0,0/
-      SAVE NX0,NY0,NZ0,WX,WY,WZ
+      SAVE WX,WY,WZ
+      INTEGER*8 NN
 C
-      IF (IOPT .EQ. 2) THEN
-        NN=NX*NY*NZ/NPU
+      NN=INT8(NX)*INT8(NY)*INT8(NZ)/INT8(NPU)
+C
+      IF (IOPT .EQ. 0) THEN
+        CALL SETTBL(WX,NX)
+        CALL SETTBL(WY,NY)
+        CALL SETTBL(WZ,NZ)
+        RETURN
+      END IF
+C
+      IF (IOPT .EQ. 1 .OR. IOPT .EQ. 2) THEN
         DO 10 I=1,NN
           A(I)=DCONJG(A(I))
    10   CONTINUE
       END IF
 C
-      IF (NX .NE. NX0) THEN
-        CALL SETTBL(WX,NX)
-        NX0=NX
-      END IF
-      IF (NY .NE. NY0) THEN
-        CALL SETTBL(WY,NY)
-        NY0=NY
-      END IF
-      IF (NZ .NE. NZ0) THEN
-        CALL SETTBL(WZ,NZ)
-        NZ0=NZ
-      END IF
-!$OMP PARALLEL PRIVATE(C,D)
-      CALL PZFFT3D0(A,A,B,B,C,C,D,WX,WY,WZ,NX,NY,NZ,NPU)
+      ND=(MAX0(NY,NZ)+NP)*NBLK+NP
+      IF (IOPT .EQ. -1 .OR. IOPT .EQ. -2) THEN
+!$OMP PARALLEL PRIVATE(C)
+        CALL PZFFT3DF(A,A,A,B,B,B,C,C,C(ND+1),WX,WY,WZ,NX,NY,NZ,ICOMM,
+     1                NPU,IOPT)
 !$OMP END PARALLEL
-      IF (IOPT .EQ. 2) THEN
-        DN=1.0D0/DBLE(NX*NY*NZ)
+      ELSE
+!$OMP PARALLEL PRIVATE(C)
+        CALL PZFFT3DB(A,A,A,B,B,B,C,C,C(ND+1),WX,WY,WZ,NX,NY,NZ,ICOMM,
+     1                NPU,IOPT)
+!$OMP END PARALLEL
+      END IF
+      IF (IOPT .EQ. 1 .OR. IOPT .EQ. 2) THEN
+        DN=1.0D0/(DBLE(NX)*DBLE(NY)*DBLE(NZ))
         DO 20 I=1,NN
-          A(I)=DCONJG(A(I))*DN
+          B(I)=DCONJG(B(I))*DN
    20   CONTINUE
       END IF
       RETURN
       END
-      SUBROUTINE PZFFT3D0(A,AX,B,BX,CY,CZ,D,WX,WY,WZ,NX,NY,NZ,NPU)
+      SUBROUTINE PZFFT3DF(A,AXPYZ,AXYZP,B,BXPYZ,BXYZP,CY,CZ,D,WX,WY,WZ,
+     1                    NX,NY,NZ,ICOMM,NPU,IOPT)
       IMPLICIT REAL*8 (A-H,O-Z)
       INCLUDE 'param.h'
-      COMPLEX*16 A(NX/NPU,NY,*),AX(NX/NPU,NY,NZ/NPU,*)
-      COMPLEX*16 B(NX,NY,*),BX(NX/NPU,NY,NZ/NPU,*)
+      COMPLEX*16 A(NX,NY,*),AXPYZ(NX/NPU,NPU,NY,*),
+     1           AXYZP(NX/NPU,NY,NZ/NPU,*)
+      COMPLEX*16 B(NX/NPU,NY,*),BXPYZ(NX/NPU,NPU,NY,*),
+     1           BXYZP(NX/NPU,NY,NZ/NPU,*)
       COMPLEX*16 CY(NY+NP,*),CZ(NZ+NP,*),D(*)
       COMPLEX*16 WX(*),WY(*),WZ(*)
       DIMENSION LNX(3),LNY(3),LNZ(3)
+      INTEGER*8 NN
 C
       CALL FACTOR(NX,LNX)
       CALL FACTOR(NY,LNY)
@@ -88,92 +113,165 @@ C
 C
       NNX=NX/NPU
       NNZ=NZ/NPU
-      NN=NX*NY*NZ/NPU
+      NN=INT8(NX)*INT8(NY)*INT8(NZ)/INT8(NPU)
 C
 !$OMP DO
-      DO 90 J=1,NY
-        DO 80 II=1,NNX,NBLK
-          DO 30 KK=1,NZ,NBLK
-            DO 20 I=II,MIN0(II+NBLK-1,NNX)
-              DO 10 K=KK,MIN0(KK+NBLK-1,NZ)
-                CZ(K,I-II+1)=A(I,J,K)
-   10         CONTINUE
-   20       CONTINUE
-   30     CONTINUE
-          DO 40 I=II,MIN0(II+NBLK-1,NNX)
-            CALL FFT235A(CZ(1,I-II+1),D,WZ,NZ,LNZ)
-   40     CONTINUE
-          DO 70 L=1,NPU
-            DO 60 K=1,NNZ
-              DO 50 I=II,MIN0(II+NBLK-1,NNX)
-                BX(I,J,K,L)=CZ(L+(K-1)*NPU,I-II+1)
-   50         CONTINUE
-   60       CONTINUE
-   70     CONTINUE
-   80   CONTINUE
-   90 CONTINUE
+      DO 100 K=1,NNZ
+        DO 10 J=1,NY
+          CALL FFT235(A(1,J,K),D,WX,NX,LNX)
+   10   CONTINUE
+        DO 90 L=1,NPU
+          DO 80 II=1,NNX,NBLK
+            DO 40 JJ=1,NY,NBLK
+              DO 30 I=II,MIN0(II+NBLK-1,NNX)
+                DO 20 J=JJ,MIN0(JJ+NBLK-1,NY)
+                  CY(J,I-II+1)=AXPYZ(I,L,J,K)
+   20           CONTINUE
+   30         CONTINUE
+   40       CONTINUE
+            DO 50 I=II,MIN0(II+NBLK-1,NNX)
+              CALL FFT235(CY(1,I-II+1),D,WY,NY,LNY)
+   50       CONTINUE
+            DO 70 J=1,NY
+              DO 60 I=II,MIN0(II+NBLK-1,NNX)
+                BXYZP(I,J,K,L)=CY(J,I-II+1)
+   60         CONTINUE
+   70       CONTINUE
+   80     CONTINUE
+   90   CONTINUE
+  100 CONTINUE
 !$OMP SINGLE
-      CALL PZTRANS(BX,AX,NN,NPU)
+      CALL PZTRANS(B,A,NN,ICOMM,NPU)
 !$OMP END SINGLE
 !$OMP DO
-      DO 190 K=1,NNZ
-        DO 170 L=1,NPU
-          DO 160 II=1,NNX,NBLK
-            DO 120 JJ=1,NY,NBLK
-              DO 110 I=II,MIN0(II+NBLK-1,NNX)
-                DO 100 J=JJ,MIN0(JJ+NBLK-1,NY)
-                  CY(J,I-II+1)=AX(I,J,K,L)
-  100           CONTINUE
+      DO 180 J=1,NY
+        DO 170 II=1,NNX,NBLK
+          DO 130 L=1,NPU
+            DO 120 I=II,MIN0(II+NBLK-1,NNX)
+              DO 110 K=1,NNZ
+                CZ(K+(L-1)*NNZ,I-II+1)=AXYZP(I,J,K,L)
   110         CONTINUE
   120       CONTINUE
-            DO 130 I=II,MIN0(II+NBLK-1,NNX)
-              CALL FFT235A(CY(1,I-II+1),D,WY,NY,LNY)
-  130       CONTINUE
-            DO 150 J=1,NY
-              DO 140 I=II,MIN0(II+NBLK-1,NNX)
-                B(L+(I-1)*NPU,J,K)=CY(J,I-II+1)
-  140         CONTINUE
+  130     CONTINUE
+          DO 140 I=II,MIN0(II+NBLK-1,NNX)
+            CALL FFT235(CZ(1,I-II+1),D,WZ,NZ,LNZ)
+  140     CONTINUE
+          DO 160 K=1,NZ
+            DO 150 I=II,MIN0(II+NBLK-1,NNX)
+              B(I,J,K)=CZ(K,I-II+1)
   150       CONTINUE
   160     CONTINUE
   170   CONTINUE
-        DO 180 J=1,NY
-          CALL FFT235A(B(1,J,K),D,WX,NX,LNX)
-  180   CONTINUE
-  190 CONTINUE
-!$OMP DO
-      DO 260 L=1,NPU
-        DO 250 KK=1,NNZ,NBLK
-          DO 240 JJ=1,NY,NBLK
-            DO 230 II=1,NNX,NBLK
-              DO 220 K=KK,MIN0(KK+NBLK-1,NNZ)
-                DO 210 J=JJ,MIN0(JJ+NBLK-1,NY)
-                  DO 200 I=II,MIN0(II+NBLK-1,NNX)
-                    AX(I,J,K,L)=B(L+(I-1)*NPU,J,K)
-  200             CONTINUE
-  210           CONTINUE
-  220         CONTINUE
-  230       CONTINUE
-  240     CONTINUE
-  250   CONTINUE
-  260 CONTINUE
+  180 CONTINUE
+      IF (IOPT .EQ. -2) RETURN
 !$OMP SINGLE
-      CALL PZTRANS(AX,BX,NN,NPU)
+      CALL PZTRANS(B,A,NN,ICOMM,NPU)
 !$OMP END SINGLE
 !$OMP DO
-      DO 330 L=1,NPU
-        DO 320 KK=1,NNZ,NBLK
-          DO 310 JJ=1,NY,NBLK
-            DO 300 II=1,NNX,NBLK
-              DO 290 K=KK,MIN0(KK+NBLK-1,NNZ)
-                DO 280 J=JJ,MIN0(JJ+NBLK-1,NY)
-                  DO 270 I=II,MIN0(II+NBLK-1,NNX)
-                    A(I,J,L+(K-1)*NPU)=BX(I,J,K,L)
-  270             CONTINUE
-  280           CONTINUE
-  290         CONTINUE
-  300       CONTINUE
-  310     CONTINUE
-  320   CONTINUE
-  330 CONTINUE
+      DO 240 KK=1,NNZ,NBLK
+        DO 230 JJ=1,NY,NBLK
+          DO 220 L=1,NPU
+            DO 210 K=KK,MIN0(KK+NBLK-1,NNZ)
+              DO 200 J=JJ,MIN0(JJ+NBLK-1,NY)
+                DO 190 I=1,NNX
+                  BXPYZ(I,L,J,K)=AXYZP(I,J,K,L)
+  190           CONTINUE
+  200         CONTINUE
+  210       CONTINUE
+  220     CONTINUE
+  230   CONTINUE
+  240 CONTINUE
+      RETURN
+      END
+      SUBROUTINE PZFFT3DB(A,AXPYZ,AXYZP,B,BXPYZ,BXYZP,CY,CZ,D,WX,WY,WZ,
+     1                    NX,NY,NZ,ICOMM,NPU,IOPT)
+      IMPLICIT REAL*8 (A-H,O-Z)
+      INCLUDE 'param.h'
+      COMPLEX*16 A(NX/NPU,NY,*),AXPYZ(NX/NPU,NPU,NY,*),
+     1           AXYZP(NX/NPU,NY,NZ/NPU,*)
+      COMPLEX*16 B(NX,NY,*),BXPYZ(NX/NPU,NPU,NY,*),
+     1           BXYZP(NX/NPU,NY,NZ/NPU,*)
+      COMPLEX*16 CY(NY+NP,*),CZ(NZ+NP,*),D(*)
+      COMPLEX*16 WX(*),WY(*),WZ(*)
+      DIMENSION LNX(3),LNY(3),LNZ(3)
+      INTEGER*8 NN
+C
+      CALL FACTOR(NX,LNX)
+      CALL FACTOR(NY,LNY)
+      CALL FACTOR(NZ,LNZ)
+C
+      NNX=NX/NPU
+      NNZ=NZ/NPU
+      NN=INT8(NX)*INT8(NY)*INT8(NZ)/INT8(NPU)
+C
+      IF (IOPT .EQ. 1) THEN
+!$OMP DO
+        DO 60 KK=1,NNZ,NBLK
+          DO 50 JJ=1,NY,NBLK
+            DO 40 L=1,NPU
+              DO 30 K=KK,MIN0(KK+NBLK-1,NNZ)
+                DO 20 J=JJ,MIN0(JJ+NBLK-1,NY)
+                  DO 10 I=1,NNX
+                    BXYZP(I,J,K,L)=AXPYZ(I,L,J,K)
+   10             CONTINUE
+   20           CONTINUE
+   30         CONTINUE
+   40       CONTINUE
+   50     CONTINUE
+   60   CONTINUE
+!$OMP SINGLE
+        CALL PZTRANS(B,A,NN,ICOMM,NPU)
+!$OMP END SINGLE
+      END IF
+!$OMP DO
+      DO 150 J=1,NY
+        DO 140 II=1,NNX,NBLK
+          DO 90 KK=1,NZ,NBLK
+            DO 80 I=II,MIN0(II+NBLK-1,NNX)
+              DO 70 K=KK,MIN0(KK+NBLK-1,NZ)
+                CZ(K,I-II+1)=A(I,J,K)
+   70         CONTINUE
+   80       CONTINUE
+   90     CONTINUE
+          DO 100 I=II,MIN0(II+NBLK-1,NNX)
+            CALL FFT235(CZ(1,I-II+1),D,WZ,NZ,LNZ)
+  100     CONTINUE
+          DO 130 L=1,NPU
+            DO 120 K=1,NNZ
+              DO 110 I=II,MIN0(II+NBLK-1,NNX)
+                BXYZP(I,J,K,L)=CZ(K+(L-1)*NNZ,I-II+1)
+  110         CONTINUE
+  120       CONTINUE
+  130     CONTINUE
+  140   CONTINUE
+  150 CONTINUE
+!$OMP SINGLE
+      CALL PZTRANS(B,A,NN,ICOMM,NPU)
+!$OMP END SINGLE
+!$OMP DO
+      DO 250 K=1,NNZ
+        DO 230 L=1,NPU
+          DO 220 II=1,NNX,NBLK
+            DO 180 JJ=1,NY,NBLK
+              DO 170 I=II,MIN0(II+NBLK-1,NNX)
+                DO 160 J=JJ,MIN0(JJ+NBLK-1,NY)
+                  CY(J,I-II+1)=AXYZP(I,J,K,L)
+  160           CONTINUE
+  170         CONTINUE
+  180       CONTINUE
+            DO 190 I=II,MIN0(II+NBLK-1,NNX)
+              CALL FFT235(CY(1,I-II+1),D,WY,NY,LNY)
+  190       CONTINUE
+            DO 210 J=1,NY
+              DO 200 I=II,MIN0(II+NBLK-1,NNX)
+                BXPYZ(I,L,J,K)=CY(J,I-II+1)
+  200         CONTINUE
+  210       CONTINUE
+  220     CONTINUE
+  230   CONTINUE
+        DO 240 J=1,NY
+          CALL FFT235(B(1,J,K),D,WX,NX,LNX)
+  240   CONTINUE
+  250 CONTINUE
       RETURN
       END

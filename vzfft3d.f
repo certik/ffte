@@ -10,9 +10,9 @@ C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
 C
 C
-C     3-D COMPLEX FFT ROUTINE
+C     3-D COMPLEX FFT ROUTINE (FOR VECTOR MACHINES)
 C
-C     FORTRAN77 SOURCE PROGRAM
+C     FORTRAN90 SOURCE PROGRAM
 C
 C     CALL ZFFT3D(A,NX,NY,NZ,IOPT)
 C
@@ -35,8 +35,9 @@ C
       IMPLICIT REAL*8 (A-H,O-Z)
       INCLUDE 'param.h'
       COMPLEX*16 A(*)
-      COMPLEX*16 B((NDA3+NP)*(NBLK+1)+NP)
       COMPLEX*16 WX(NDA3/2+NP),WY(NDA3/2+NP),WZ(NDA3/2+NP)
+      COMPLEX*16 B(:)
+      ALLOCATABLE :: B
       DIMENSION LNX(3),LNY(3),LNZ(3)
       SAVE WX,WY,WZ
 C
@@ -57,10 +58,14 @@ C
    10   CONTINUE
       END IF
 C
-      NC=(MAX0(NY,NZ)+NP)*NBLK+NP
-!$OMP PARALLEL PRIVATE(B)
-      CALL ZFFT3D0(A,B,B,B(NC+1),WX,WY,WZ,NX,NY,NZ,LNX,LNY,LNZ)
-!$OMP END PARALLEL
+      ALLOCATE(B(NX*NY*NZ))
+      CALL MFFT235A(A,B,WZ,NX*NY,NZ,LNZ)
+      CALL ZTRANS(A,B,NX*NY,NZ)
+      CALL MFFT235A(B,A,WY,NZ*NX,NY,LNY)
+      CALL ZTRANS(B,A,NZ*NX,NY)
+      CALL MFFT235B(A,B,WX,NY*NZ,NX,LNX)
+      CALL ZTRANS(B,A,NY*NZ,NX)
+      DEALLOCATE(B)
 C
       IF (IOPT .EQ. 1) THEN
         DN=1.0D0/(DBLE(NX)*DBLE(NY)*DBLE(NZ))
@@ -68,57 +73,5 @@ C
           A(I)=DCONJG(A(I))*DN
    20   CONTINUE
       END IF
-      RETURN
-      END
-      SUBROUTINE ZFFT3D0(A,BY,BZ,C,WX,WY,WZ,NX,NY,NZ,LNX,LNY,LNZ)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      INCLUDE 'param.h'
-      COMPLEX*16 A(NX,NY,*),BY(NY+NP,*),BZ(NZ+NP,*),C(*)
-      COMPLEX*16 WX(*),WY(*),WZ(*)
-      DIMENSION LNX(*),LNY(*),LNZ(*)
-C
-!$OMP DO
-      DO 80 J=1,NY
-        DO 70 II=1,NX,NBLK
-          DO 30 KK=1,NZ,NBLK
-            DO 20 I=II,MIN0(II+NBLK-1,NX)
-              DO 10 K=KK,MIN0(KK+NBLK-1,NZ)
-                BZ(K,I-II+1)=A(I,J,K)
-   10         CONTINUE
-   20       CONTINUE
-   30     CONTINUE
-          DO 40 I=II,MIN0(II+NBLK-1,NX)
-            CALL FFT235(BZ(1,I-II+1),C,WZ,NZ,LNZ)
-   40     CONTINUE
-          DO 60 K=1,NZ
-            DO 50 I=II,MIN0(II+NBLK-1,NX)
-              A(I,J,K)=BZ(K,I-II+1)
-   50       CONTINUE
-   60     CONTINUE
-   70   CONTINUE
-   80 CONTINUE
-!$OMP DO
-      DO 170 K=1,NZ
-        DO 150 II=1,NX,NBLK
-          DO 110 JJ=1,NY,NBLK
-            DO 100 I=II,MIN0(II+NBLK-1,NX)
-              DO 90 J=JJ,MIN0(JJ+NBLK-1,NY)
-                BY(J,I-II+1)=A(I,J,K)
-   90         CONTINUE
-  100       CONTINUE
-  110     CONTINUE
-          DO 120 I=II,MIN0(II+NBLK-1,NX)
-            CALL FFT235(BY(1,I-II+1),C,WY,NY,LNY)
-  120     CONTINUE
-          DO 140 J=1,NY
-            DO 130 I=II,MIN0(II+NBLK-1,NX)
-              A(I,J,K)=BY(J,I-II+1)
-  130       CONTINUE
-  140     CONTINUE
-  150   CONTINUE
-        DO 160 J=1,NY
-          CALL FFT235(A(1,J,K),C,WX,NX,LNX)
-  160   CONTINUE
-  170 CONTINUE
       RETURN
       END

@@ -1,0 +1,72 @@
+C
+C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
+C
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, ALL RIGHTS RESERVED
+C                BY
+C         DAISUKE TAKAHASHI
+C         GRADUATE SCHOOL OF SYSTEMS AND INFORMATION ENGINEERING
+C         UNIVERSITY OF TSUKUBA
+C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
+C         E-MAIL: daisuke@cs.tsukuba.ac.jp
+C
+C
+C     1-D COMPLEX FFT ROUTINE (FOR VECTOR MACHINES)
+C
+C     FORTRAN77 SOURCE PROGRAM
+C
+C     CALL ZFFT1D(A,N,IOPT,B)
+C
+C     A(N) IS COMPLEX INPUT/OUTPUT VECTOR (COMPLEX*16)
+C     B(N*2) IS WORK/COEFFICIENT VECTOR (COMPLEX*16)
+C     N IS THE LENGTH OF THE TRANSFORMS (INTEGER*4)
+C       -----------------------------------
+C         N = (2**IP) * (3**IQ) * (5**IR)
+C       -----------------------------------
+C     IOPT = 0 FOR INITIALIZING THE COEFFICIENTS (INTEGER*4)
+C          = -1 FOR FORWARD TRANSFORM
+C          = +1 FOR INVERSE TRANSFORM
+C
+C     WRITTEN BY DAISUKE TAKAHASHI
+C
+      SUBROUTINE ZFFT1D(A,N,IOPT,B)
+      IMPLICIT REAL*8 (A-H,O-Z)
+      INCLUDE 'param.h'
+      COMPLEX*16 A(*),B(*)
+      COMPLEX*16 W1(NDA2/2+NP),W2(NDA2/2+NP)
+      DIMENSION IP(3),IP1(3),IP2(3)
+      SAVE W1,W2
+C
+      CALL FACTOR(N,IP)
+C
+      IF (IOPT .EQ. 1) THEN
+        DO 10 I=1,N
+          A(I)=DCONJG(A(I))
+   10   CONTINUE
+      END IF
+C
+      DO 20 I=1,3
+        IP1(I)=(IP(I)+1)/2
+        IP2(I)=IP(I)-IP1(I)
+   20 CONTINUE
+      N1=(2**IP1(1))*(3**IP1(2))*(5**IP1(3))
+      N2=(2**IP2(1))*(3**IP2(2))*(5**IP2(3))
+C
+      IF (IOPT .EQ. 0) THEN
+        CALL SETTBL(W1,N1)
+        CALL SETTBL(W2,N2)
+        CALL SETTBL2(B(N+1),N2,N1)
+        RETURN
+      END IF
+C
+      CALL MFFT235A(A,B,W2,N1,N2,IP2)
+      CALL ZTRANSMUL(A,B,B(N+1),N1,N2)
+      CALL MFFT235B(B,A,W1,N2,N1,IP1)
+C
+      IF (IOPT .EQ. 1) THEN
+        DN=1.0D0/DBLE(N)
+        DO 30 I=1,N
+          A(I)=DCONJG(A(I))*DN
+   30   CONTINUE
+      END IF
+      RETURN
+      END
