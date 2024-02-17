@@ -52,12 +52,14 @@ Files:
         pcuzfft3dv.f : Parallel 3-D complex FFT routine (with 2-D decomposition, for NVIDIA GPUs)
         pdzfft2d.f   : Parallel 2-D real-to-complex FFT routine
         pdzfft3d.f   : Parallel 3-D real-to-complex FFT routine
+        pdzfft3dv.f  : Parallel 3-D real-to-complex FFT routine (with 2-D decomposition)
         pfactor.f    : Parallel factorization routine
         pvzfft1d.f   : Parallel 1-D complex FFT routine (for vector machines)
         pvzfft2d.f   : Parallel 2-D complex FFT routine (for vector machines)
         pvzfft3d.f   : Parallel 3-D complex FFT routine (for vector machines)
         pzdfft2d.f   : Parallel 2-D complex-to-real FFT routine
         pzdfft3d.f   : Parallel 3-D complex-to-real FFT routine
+        pzdfft3dv.f  : Parallel 3-D complex-to-real FFT routine (with 2-D decomposition)
         pzfft1d.f    : Parallel 1-D complex FFT routine
         pzfft2d.f    : Parallel 2-D complex FFT routine
         pzfft3d.f    : Parallel 3-D complex FFT routine
@@ -76,8 +78,10 @@ Files:
             pcutest3dv.f  : Test program for pzfft3dv (for NVIDIA GPUs)
             prspeed2d.f   : Speed test program for pdzfft2d
             prspeed3d.f   : Speed test program for pdzfft3d
+            prspeed3dv.f  : Speed test program for pdzfft3dv
             prtest2d.f    : Test program for pdzfft2d and pzdfft2d
             prtest3d.f    : Test program for pdzfft3d and pzdfft3d
+            prtest3dv.f   : Test program for pdzfft3dv and pzdfft3dv
             pspeed1d.f    : Speed test program for pzfft1d
             pspeed2d.f    : Speed test program for pzfft2d
             pspeed3d.f    : Speed test program for pzfft3d
@@ -87,50 +91,56 @@ Files:
             ptest3d.f     : Test program for pzfft3d
             ptest3dv.f    : Test program for pzfft3dv
 
-Reference:
+References:
     1. Daisuke Takahashi: A Blocking Algorithm for FFT on Cache-Based
        Processors, Proc. 9th International Conference on High
        Performance Computing and Networking Europe (HPCN Europe 2001),
-       Lecture Notes in Computer Science, Vol. 2110, pp. 551--554,
-       Springer-Verlag (2001).
+       Lecture Notes in Computer Science, Vol. 2110, pp. 551-554,
+       Springer (2001).
 
     2. Daisuke Takahashi: A Blocking Algorithm for Parallel 1-D FFT on
        Shared-Memory Parallel Computers, Proc. 6th International
        Conference on Applied Parallel Computing (PARA 2002),
-       Lecture Notes in Computer Science, Vol. 2367, pp. 380--389,
-       Springer-Verlag (2002).
+       Lecture Notes in Computer Science, Vol. 2367, pp. 380-389,
+       Springer (2002).
 
     3. Daisuke Takahashi: Efficient implementation of parallel
        three-dimensional FFT on clusters of PCs, Computer Physics
-       Communications, Vol. 152, pp. 144--150, (2003).
+       Communications, Vol. 152, pp. 144-150, (2003).
 
     4. Daisuke Takahashi: A parallel 1-D FFT algorithm for the Hitachi
-       SR8000, Parallel Computing, Vol. 29, pp. 679--690 (2003).
+       SR8000, Parallel Computing, Vol. 29, pp. 679-690 (2003).
 
     5. Daisuke Takahashi: A Hybrid MPI/OpenMP Implementation of a
        Parallel 3-D FFT on SMP Clusters, Proc. 6th International
        Conference on Parallel Processing and Applied Mathematics
        (PPAM 2005), Lecture Notes in Computer Science, Vol. 3911,
-       pp. 970--977, Springer-Verlag (2006).
+       pp. 970-977, Springer (2006).
 
     6. Daisuke Takahashi: An Implementation of Parallel 3-D FFT with
        2-D Decomposition on a Massively Parallel Cluster of Multi-core
        Processors, Proc. 8th International Conference on Parallel
        Processing and Applied Mathematics (PPAM 2009), Part I,
        Workshop on Memory Issues on Multi- and Manycore Platforms,
-       Lecture Notes in Computer Science, Vol. 6067, pp. 606--614,
-       Springer-Verlag (2010).
+       Lecture Notes in Computer Science, Vol. 6067, pp. 606-614,
+       Springer (2010).
 
     7. Daisuke Takahashi: Implementation of Parallel 1-D FFT on GPU
        Clusters, Proc. 2013 IEEE 16th International Conference on
-       Computational Science and Engineering (CSE 2013), pp. 174--180
+       Computational Science and Engineering (CSE 2013), pp. 174-180
        (2013).
 
+    8. Daisuke Takahashi: Implementation of Parallel 3-D Real FFT with
+       2-D Decomposition on Intel Xeon Phi Clusters, Proc. 13th
+       International Conference on Parallel Processing and Applied
+       Mathematics (PPAM 2019), Part I, Lecture Notes in Computer
+       Science, Vol. 12043, pp. 151-161, Springer (2020).
+
 Copyright:
-    Copyright(C), 2000-2004, 2008-2014, Daisuke Takahashi
-    Faculty of Engineering, Information and Systems
+    Copyright(C), 2000-2004, 2008-2014, 2020, Daisuke Takahashi
+    Center for Computational Sciences
     University of Tsukuba
-    1-1-1 Tennodai, Tsukuba, Ibaraki 305-8573, Japan
+    1-1-1 Tennodai, Tsukuba, Ibaraki 305-8577, Japan
     e-mail: daisuke@cs.tsukuba.ac.jp
     You may use, copy, modify this code for any purpose (include
     commercial use) and without fee.

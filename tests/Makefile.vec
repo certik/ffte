@@ -1,7 +1,5 @@
 FC = f90
 FCFLAGS = -O3 -I..
-#FC = ifort
-#FCFLAGS = -O3 -xAVX -I..
 
 all: test1d test2d test3d speed1d speed2d speed3d
 

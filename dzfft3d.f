@@ -1,12 +1,13 @@
 C
 C     FFTE: A FAST FOURIER TRANSFORM PACKAGE
 C
-C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2011, ALL RIGHTS RESERVED
+C     (C) COPYRIGHT SOFTWARE, 2000-2004, 2008-2011, 2020
+C         ALL RIGHTS RESERVED
 C                BY
 C         DAISUKE TAKAHASHI
-C         FACULTY OF ENGINEERING, INFORMATION AND SYSTEMS
+C         CENTER FOR COMPUTATIONAL SCIENCES
 C         UNIVERSITY OF TSUKUBA
-C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8573, JAPAN
+C         1-1-1 TENNODAI, TSUKUBA, IBARAKI 305-8577, JAPAN
 C         E-MAIL: daisuke@cs.tsukuba.ac.jp
 C
 C
@@ -41,16 +42,16 @@ C
       DIMENSION LNX(3),LNY(3),LNZ(3)
       SAVE WX,WY,WZ
 C
-      CALL FACTOR(NX,LNX)
-      CALL FACTOR(NY,LNY)
-      CALL FACTOR(NZ,LNZ)
-C
       IF (IOPT .EQ. 0) THEN
         CALL SETTBL(WX,NX)
         CALL SETTBL(WY,NY)
         CALL SETTBL(WZ,NZ)
         RETURN
       END IF
+C
+      CALL FACTOR(NX,LNX)
+      CALL FACTOR(NY,LNY)
+      CALL FACTOR(NZ,LNZ)
 C
 !$OMP PARALLEL PRIVATE(C,D)
       CALL DZFFT3D0(A,A,B,C,C,C,D,WX,WY,WZ,NX,NY,NZ,LNX,LNY,LNZ)
@@ -67,9 +68,9 @@ C
       DIMENSION DA(NX,NY,*)
       DIMENSION LNX(*),LNY(*),LNZ(*)
 C
-!$OMP DO
-      DO 150 K=1,NZ
-        IF (MOD(NY,2) .EQ. 0) THEN
+      IF (MOD(NY,2) .EQ. 0) THEN
+!$OMP DO PRIVATE(I,II,J)
+        DO 100 K=1,NZ
           DO 30 J=1,NY,2
             DO 10 I=1,NX
               CX(I)=DCMPLX(DA(I,J,K),DA(I,J+1,K))
@@ -83,66 +84,86 @@ C
               B(I,J+1,K)=(0.0D0,-0.5D0)*(CX(I)-DCONJG(CX(NX-I+2)))
    20       CONTINUE
    30     CONTINUE
-        ELSE
-          DO 60 J=1,NY-1,2
-            DO 40 I=1,NX
+          DO 90 II=1,NX/2+1,NBLK
+            DO 50 I=II,MIN0(II+NBLK-1,NX/2+1)
+!DIR$ VECTOR ALIGNED
+              DO 40 J=1,NY
+                CY(J,I-II+1)=B(I,J,K)
+   40         CONTINUE
+   50       CONTINUE
+            DO 60 I=II,MIN0(II+NBLK-1,NX/2+1)
+              CALL FFT235(CY(1,I-II+1),D,WY,NY,LNY)
+   60       CONTINUE
+            DO 80 J=1,NY
+!DIR$ VECTOR ALIGNED
+              DO 70 I=II,MIN0(II+NBLK-1,NX/2+1)
+                B(I,J,K)=CY(J,I-II+1)
+   70         CONTINUE
+   80       CONTINUE
+   90     CONTINUE
+  100   CONTINUE
+      ELSE
+!$OMP DO PRIVATE(I,II,J)
+        DO 220 K=1,NZ
+          DO 130 J=1,NY-1,2
+            DO 110 I=1,NX
               CX(I)=DCMPLX(DA(I,J,K),DA(I,J+1,K))
-   40       CONTINUE
+  110       CONTINUE
             CALL FFT235(CX,D,WX,NX,LNX)
             B(1,J,K)=DBLE(CX(1))
             B(1,J+1,K)=DIMAG(CX(1))
 !DIR$ VECTOR ALIGNED
-            DO 50 I=2,NX/2+1
+            DO 120 I=2,NX/2+1
               B(I,J,K)=0.5D0*(CX(I)+DCONJG(CX(NX-I+2)))
               B(I,J+1,K)=(0.0D0,-0.5D0)*(CX(I)-DCONJG(CX(NX-I+2)))
-   50       CONTINUE
-   60     CONTINUE
-          DO 70 I=1,NX
-            CX(I)=DCMPLX(DA(I,NY,K),0.0D0)
-   70     CONTINUE
-          CALL FFT235(CX,D,WX,NX,LNX)
-!DIR$ VECTOR ALIGNED
-          DO 80 I=1,NX/2+1
-            B(I,NY,K)=CX(I)
-   80     CONTINUE
-        END IF
-        DO 140 II=1,NX/2+1,NBLK
-          DO 100 I=II,MIN0(II+NBLK-1,NX/2+1)
-!DIR$ VECTOR ALIGNED
-            DO 90 J=1,NY
-              CY(J,I-II+1)=B(I,J,K)
-   90       CONTINUE
-  100     CONTINUE
-          DO 110 I=II,MIN0(II+NBLK-1,NX/2+1)
-            CALL FFT235(CY(1,I-II+1),D,WY,NY,LNY)
-  110     CONTINUE
-          DO 130 J=1,NY
-!DIR$ VECTOR ALIGNED
-            DO 120 I=II,MIN0(II+NBLK-1,NX/2+1)
-              B(I,J,K)=CY(J,I-II+1)
   120       CONTINUE
   130     CONTINUE
-  140   CONTINUE
-  150 CONTINUE
-!$OMP DO
-      DO 220 J=1,NY
-        DO 210 II=1,NX/2+1,NBLK
-          DO 170 I=II,MIN0(II+NBLK-1,NX/2+1)
+          DO 140 I=1,NX
+            CX(I)=DCMPLX(DA(I,NY,K),0.0D0)
+  140     CONTINUE
+          CALL FFT235(CX,D,WX,NX,LNX)
 !DIR$ VECTOR ALIGNED
-            DO 160 K=1,NZ
+          DO 150 I=1,NX/2+1
+            B(I,NY,K)=CX(I)
+  150     CONTINUE
+          DO 210 II=1,NX/2+1,NBLK
+            DO 170 I=II,MIN0(II+NBLK-1,NX/2+1)
+!DIR$ VECTOR ALIGNED
+              DO 160 J=1,NY
+                CY(J,I-II+1)=B(I,J,K)
+  160         CONTINUE
+  170       CONTINUE
+            DO 180 I=II,MIN0(II+NBLK-1,NX/2+1)
+              CALL FFT235(CY(1,I-II+1),D,WY,NY,LNY)
+  180       CONTINUE
+            DO 200 J=1,NY
+!DIR$ VECTOR ALIGNED
+              DO 190 I=II,MIN0(II+NBLK-1,NX/2+1)
+                B(I,J,K)=CY(J,I-II+1)
+  190         CONTINUE
+  200       CONTINUE
+  210     CONTINUE
+  220   CONTINUE
+      END IF
+!$OMP DO PRIVATE(I,II,K)
+      DO 290 J=1,NY
+        DO 280 II=1,NX/2+1,NBLK
+          DO 240 I=II,MIN0(II+NBLK-1,NX/2+1)
+!DIR$ VECTOR ALIGNED
+            DO 230 K=1,NZ
               CZ(K,I-II+1)=B(I,J,K)
-  160       CONTINUE
-  170     CONTINUE
-          DO 180 I=II,MIN0(II+NBLK-1,NX/2+1)
+  230       CONTINUE
+  240     CONTINUE
+          DO 250 I=II,MIN0(II+NBLK-1,NX/2+1)
             CALL FFT235(CZ(1,I-II+1),D,WZ,NZ,LNZ)
-  180     CONTINUE
-          DO 200 K=1,NZ
+  250     CONTINUE
+          DO 270 K=1,NZ
 !DIR$ VECTOR ALIGNED
-            DO 190 I=II,MIN0(II+NBLK-1,NX/2+1)
+            DO 260 I=II,MIN0(II+NBLK-1,NX/2+1)
               A(I,J,K)=CZ(K,I-II+1)
-  190       CONTINUE
-  200     CONTINUE
-  210   CONTINUE
-  220 CONTINUE
+  260       CONTINUE
+  270     CONTINUE
+  280   CONTINUE
+  290 CONTINUE
       RETURN
       END
