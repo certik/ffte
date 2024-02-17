@@ -1,5 +1,5 @@
 FC = mpif90
-FCFLAGS = -fast -Mcuda=cc3x,cuda5.5 -Minfo -I../..
+FCFLAGS = -fast -Mcuda=cc75,cuda10.1 -Minfo -I../..
 
 all: pcutest1d pcutest2d pcutest3d pcutest3dv pcuspeed1d pcuspeed2d pcuspeed3d pcuspeed3dv
 

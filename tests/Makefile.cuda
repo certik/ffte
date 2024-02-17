@@ -1,5 +1,5 @@
 FC = pgfortran
-FCFLAGS = -fast -mp -Mcuda=cc3x,cuda5.5 -Minfo -I..
+FCFLAGS = -fast -mp -Mcuda=cc75,cuda10.1 -Minfo -I..
 
 all: cutest1d cutest2d cutest3d cuspeed1d cuspeed2d cuspeed3d
 
